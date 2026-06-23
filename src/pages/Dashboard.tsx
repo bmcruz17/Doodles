@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useAuth } from '../hooks/useAuth'
+import { BRAND } from '../version'
 import type { Pet } from '../lib/types'
 
 export default function Dashboard() {
-  const { user } = useAuth()
   const [pets, setPets] = useState<Pet[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -37,10 +36,10 @@ export default function Dashboard() {
         <div className="card">
           <img src="/doodle.svg" alt="" className="mx-auto mb-4 h-16 w-16" />
           <h1 className="text-xl font-semibold text-brand-50">
-            Welcome to Doodles{user?.email ? '' : ''}!
+            Welcome to {BRAND}!
           </h1>
           <p className="mt-2 text-sm text-brand-300">
-            Let's start by creating a profile for your doodle. It powers the AI
+            Let's start by creating a profile for your dog. It powers the AI
             companion, your health vault, and member perks.
           </p>
           <Link to="/pets/new" className="btn-primary mt-5 inline-flex">
@@ -72,13 +71,13 @@ export default function Dashboard() {
                 />
               ) : (
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-800 text-2xl">
-                  🐩
+                  🐶
                 </div>
               )}
               <div>
                 <h2 className="text-lg font-semibold text-brand-50">{pet.name}</h2>
                 <p className="text-sm text-brand-300">
-                  {pet.doodle_type || pet.breed || 'Doodle'}
+                  {pet.breed || 'Dog'}
                 </p>
                 {pet.coat_type && (
                   <p className="text-xs text-brand-400">{pet.coat_type} coat</p>

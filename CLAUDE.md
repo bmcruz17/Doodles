@@ -1,12 +1,24 @@
-# CLAUDE.md — Doodle Platform
+# CLAUDE.md — PackHub (working name)
 
 Context for Claude Code. Read this before generating or editing anything.
+(Repo is still named `doodles` — the brand name is TBD; UI uses the `BRAND`
+constant in `src/version.ts`. The doodle community is our launch wedge, but the
+product serves **all breeds**.)
 
 ## What this is
 
-The doodle-owner platform: AI doodle companion, health-records vault, services
-marketplace (~18% commission), and doodle travel. Aggregator model — we don't
-own inventory. Doodles first, other breeds later.
+The all-in-one dog-owner platform: AI dog-care companion, health-records vault,
+a services marketplace, and dog travel. We are the **booking middleman /
+distributor**: owners book services (grooming, mobile vet, sitters, waste
+removal, food, etc.) and we fulfill them through pre-negotiated **affiliate
+vendors** now, taking a ~18% commission. As the membership/subscriber base
+grows we bring fulfillment **in-house** (our own mobile grooming vans,
+veterinary vans, and trucks) — tracked per vendor via `vendors.fulfillment`
+(`affiliate` | `in_house`). Aggregator model — we don't own inventory yet.
+
+Membership also anchors an AAA-style perk network (later): traveling members
+get access to private dog parks / sniff-spots and dog-welcoming places, plus
+member travel rates and concierge logistics.
 
 ## Stack
 
@@ -76,7 +88,7 @@ subscriptions, travel_bookings, ai_conversations. See
 
 ## Build order
 
-1. Auth + pets + health vault + AI companion + Stripe membership
-2. Marketplace + Connect + bookings + sitters; Capacitor mobile
-3. Travel
-4. Wearable + custom AI + more breeds
+1. Auth + pets + health vault + AI companion + Stripe membership (all breeds)
+2. Marketplace booking + Stripe Connect payouts (18% split) + sitters; Capacitor mobile
+3. Travel + AAA-style member park/place access network
+4. In-house fulfillment fleet (mobile grooming/vet vans, trucks); wearable + custom AI

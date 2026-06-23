@@ -16,15 +16,22 @@ export type HealthRecordType =
 export type VendorCategory =
   | 'grooming'
   | 'mobile_vet'
+  | 'vet'
   | 'food'
+  | 'supplies'
   | 'insurance'
   | 'sitter'
+  | 'walking'
+  | 'boarding'
+  | 'daycare'
+  | 'training'
+  | 'waste_removal'
   | 'specialist'
   | 'travel'
-  | 'supplies'
   | 'other'
 
 export type VendorStatus = 'active' | 'pending' | 'paused'
+export type Fulfillment = 'affiliate' | 'in_house'
 export type ServiceInterval = 'once' | 'week' | 'month' | 'year'
 export type BookingStatus = 'requested' | 'confirmed' | 'completed' | 'cancelled'
 export type TravelType = 'flight' | 'rental' | 'car' | 'ground' | 'other'
@@ -61,7 +68,6 @@ export type Pet = {
   owner_id: string
   name: string
   breed: string | null
-  doodle_type: string | null
   birthdate: string | null
   weight_lbs: number | null
   coat_type: string | null
@@ -110,7 +116,8 @@ export type Vendor = {
   category: VendorCategory
   description: string | null
   location: string | null
-  doodle_specialist: boolean
+  verified: boolean
+  fulfillment: Fulfillment
   rating: number | null
   status: VendorStatus
   stripe_connect_id: string | null
@@ -244,7 +251,7 @@ export type Database = {
       }
       bookings: {
         Row: Booking
-        Insert: Omit<Booking, Generated> & { user_id: string }
+        Insert: Partial<Booking> & { user_id: string }
         Update: Partial<Booking>
         Relationships: []
       }

@@ -1,9 +1,9 @@
-// AI Doodle Companion — Supabase Edge Function (Deno).
+// AI Companion — Supabase Edge Function (Deno).
 //
 // Request:  { pet_id: string, message: string }
 // Response: { reply: string }
 //
-// Loads the pet's profile + recent health records, builds a doodle-expert
+// Loads the pet's profile + recent health records, builds a dog-care expert
 // system prompt grounded in that specific dog, calls the Anthropic Claude API
 // (server-side — the key never reaches the client), appends the exchange to
 // ai_conversations.messages, and returns the reply.
@@ -44,15 +44,17 @@ const DISCLAIMER =
 
 function buildSystemPrompt(pet: Record<string, unknown>, records: string): string {
   return [
-    'You are the AI Doodle Companion, a warm, knowledgeable expert on doodle',
-    'dogs (poodle crosses such as Goldendoodles, Labradoodles, Bernedoodles,',
-    'Sheepadoodles, and Saint Berdoodles). You know coat types and grooming',
-    'cycles, common health conditions, temperament and training quirks, and',
-    'nutrition for doodles.',
+    'You are the AI Companion, a warm, knowledgeable expert on dog care across',
+    'all breeds and mixes — from Goldendoodles to German Shepherds to rescue',
+    'mutts. You tailor advice to the specific breed, size, age, and coat of the',
+    'dog in question: coat types and grooming cycles, breed-common health',
+    'conditions, temperament and training, exercise needs, and nutrition.',
     '',
     'You are speaking with the owner about THEIR specific dog. Ground every',
-    'answer in this dog\'s actual profile and records below. If the records',
-    "don't contain something you'd need, say so and ask a clarifying question.",
+    'answer in this dog\'s actual profile and records below. If breed is missing',
+    'or unknown, give sound general guidance and note where breed would change',
+    "your answer. If the records don't contain something you'd need, say so and",
+    'ask a clarifying question.',
     '',
     `IMPORTANT: ${DISCLAIMER}`,
     '',

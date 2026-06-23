@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { BRAND, TAGLINE } from '../version'
 
 export default function SignUp() {
   const { signUp, signIn } = useAuth()
@@ -35,13 +36,11 @@ export default function SignUp() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2">
-          <img src="/doodle.svg" alt="Doodles" className="h-12 w-12" />
+          <img src="/doodle.svg" alt={BRAND} className="h-12 w-12" />
           <h1 className="text-2xl font-semibold text-brand-50">
-            Create your account
+            Create your {BRAND} account
           </h1>
-          <p className="text-sm text-brand-300">
-            The operating system for doodle ownership
-          </p>
+          <p className="text-sm text-brand-300">{TAGLINE}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="card space-y-4">

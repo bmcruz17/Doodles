@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { BUILD_VERSION } from '../version'
+import { BUILD_VERSION, BRAND } from '../version'
 
 const links = [
   { to: '/', label: 'Dashboard', end: true },
@@ -22,9 +22,9 @@ export default function Navbar() {
     <header className="sticky top-0 z-20 border-b border-brand-800 bg-brand-950/80 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
         <Link to="/" className="flex items-center gap-2">
-          <img src="/doodle.svg" alt="Doodles" className="h-8 w-8" />
+          <img src="/doodle.svg" alt={BRAND} className="h-8 w-8" />
           <span className="text-lg font-semibold tracking-tight text-brand-50">
-            Doodles
+            {BRAND}
           </span>
         </Link>
 

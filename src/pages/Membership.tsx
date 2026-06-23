@@ -13,7 +13,7 @@ const TIERS: {
     tier: 'basic',
     price: '$15',
     blurb: 'AI companion, health vault, marketplace discounts.',
-    perks: ['AI Doodle Companion', 'Health records vault', 'Marketplace discounts'],
+    perks: ['AI Companion', 'Health records vault', 'Marketplace discounts'],
   },
   {
     tier: 'premium',
@@ -23,6 +23,7 @@ const TIERS: {
       'Everything in Basic',
       'Priority member travel rates',
       'Included sitter credits',
+      'Private dog park & place access (coming soon)',
       'Specialist concierge',
     ],
   },

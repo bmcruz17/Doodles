@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
         FALLBACK_AMOUNT[tier],
       )
       params['line_items[0][price_data][product_data][name]'] =
-        `Doodles ${tier} membership — ${pet.name}`
+        `PackHub ${tier} membership — ${pet.name}`
     }
 
     const session = await stripe('checkout/sessions', params)

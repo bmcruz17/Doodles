@@ -1,12 +1,19 @@
-# Doodles 🐩
+# PackHub 🐶
 
-The operating system for doodle ownership — an AI doodle companion, a
-health-records vault, a curated services marketplace (~18% commission), and a
-doodle-first travel ecosystem. Aggregator model: we don't own inventory.
+> Working name — TBD. The repo is named `doodles` (the doodle community is our
+> launch wedge), but the product serves **all dog breeds**. The brand string
+> lives in `src/version.ts` (`BRAND`).
+
+The all-in-one app for dog owners — an AI dog-care companion, a health-records
+vault, a services marketplace, and dog travel. We're the **booking middleman**:
+owners book grooming, mobile vet, sitting, waste removal, food and more, and we
+fulfill through pre-negotiated **affiliate vendors** (~18% commission), bringing
+fulfillment **in-house** (our own grooming/vet vans and trucks) as the
+subscriber base grows.
 
 This repo contains the **Phase 1** web platform: auth, pet profiles, the health
-vault, the AI companion, and Stripe membership, with marketplace/travel
-foundations in place.
+vault, the AI companion, Stripe membership, and a marketplace with booking
+requests, with travel foundations in place.
 
 ## Stack
 
@@ -140,10 +147,10 @@ already sets this; the rule is belt-and-suspenders).
 
 ## Roadmap
 
-1. **Phase 1 (this repo):** auth + pets + health vault + AI companion + Stripe membership
-2. **Phase 2:** marketplace bookings + Stripe Connect payouts (18% split) + sitters; Capacitor mobile
-3. **Phase 3:** travel booking
-4. **Phase 4:** wearable + custom AI + more breeds
+1. **Phase 1 (this repo):** auth + pets + health vault + AI companion + Stripe membership + marketplace booking requests (all breeds)
+2. **Phase 2:** marketplace payments + Stripe Connect payouts (18% split) + sitters; Capacitor mobile
+3. **Phase 3:** travel booking + AAA-style member park/place access network
+4. **Phase 4:** in-house fulfillment fleet (mobile grooming/vet vans, trucks); wearable + custom AI
 
 ## Notes & cautions
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { BUILD_VERSION } from '../version'
+import { BUILD_VERSION, BRAND } from '../version'
 
 export default function Login() {
   const { signIn } = useAuth()
@@ -29,9 +29,9 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2">
-          <img src="/doodle.svg" alt="Doodles" className="h-12 w-12" />
+          <img src="/doodle.svg" alt={BRAND} className="h-12 w-12" />
           <h1 className="text-2xl font-semibold text-brand-50">Welcome back</h1>
-          <p className="text-sm text-brand-300">Sign in to your Doodles account</p>
+          <p className="text-sm text-brand-300">Sign in to your {BRAND} account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="card space-y-4">

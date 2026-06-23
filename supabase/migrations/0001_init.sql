@@ -1,6 +1,11 @@
 -- =============================================================================
--- Doodle Platform — initial schema (Phase 1)
+-- PackHub (working name) — initial schema (Phase 1)
 -- Postgres + Supabase Auth + Storage + Row Level Security.
+--
+-- All-breed dog-care platform. We are the booking middleman/distributor:
+-- owners book services, we fulfill through pre-negotiated affiliate vendors
+-- now (vendors.fulfillment = 'affiliate'), bringing fulfillment in-house
+-- ('in_house') as the subscriber base grows.
 --
 -- Source of truth for the schema. Mirrors the core tables in the business plan
 -- (§7.2) and CLAUDE.md: users, pets, health_records, vaccinations, vendors,
@@ -79,11 +84,10 @@ create table public.pets (
   id           uuid primary key default gen_random_uuid(),
   owner_id     uuid not null references public.users (id) on delete cascade,
   name         text not null,
-  breed        text,                          -- 'mini_goldendoodle', 'saint_berdoodle', ...
-  doodle_type  text,                          -- 'goldendoodle', 'bernedoodle', ...
+  breed        text,                          -- any breed: 'golden_retriever', 'goldendoodle', 'mixed', ...
   birthdate    date,
   weight_lbs   numeric(6, 2),
-  coat_type    text,                          -- 'wavy', 'curly', 'straight'
+  coat_type    text,                          -- 'short', 'wavy', 'curly', 'double', ...
   sex          text check (sex in ('male', 'female', 'unknown')),
   photo_url    text,
   ai_profile   jsonb not null default '{}'::jsonb,  -- learned traits, preferences, baselines
@@ -136,11 +140,15 @@ create table public.vendors (
   name               text not null,
   category           text not null
                        check (category in
-                         ('grooming', 'mobile_vet', 'food', 'insurance',
-                          'sitter', 'specialist', 'travel', 'supplies', 'other')),
+                         ('grooming', 'mobile_vet', 'vet', 'food', 'supplies',
+                          'insurance', 'sitter', 'walking', 'boarding',
+                          'daycare', 'training', 'waste_removal', 'specialist',
+                          'travel', 'other')),
   description        text,
   location           text,                    -- free-text city/region for Phase 1
-  doodle_specialist  boolean not null default false,
+  verified           boolean not null default false,  -- vetted affiliate partner
+  fulfillment        text not null default 'affiliate'
+                       check (fulfillment in ('affiliate', 'in_house')),
   rating             numeric(2, 1),
   status             text not null default 'active'
                        check (status in ('active', 'pending', 'paused')),
@@ -402,23 +410,27 @@ create policy "pet_documents_owner_delete" on storage.objects
 -- =============================================================================
 -- Seed a few public marketplace vendors + services (catalog stub)
 -- =============================================================================
-insert into public.vendors (id, name, category, description, location, doodle_specialist, rating)
+insert into public.vendors (id, name, category, description, location, verified, fulfillment, rating)
 values
-  ('11111111-1111-1111-1111-111111111111', 'Curly Coats Grooming', 'grooming',
-   'Doodle-specialist groomers — teddy-bear trims and de-matting.', 'Austin, TX', true, 4.9),
-  ('22222222-2222-2222-2222-222222222222', 'Pawsitive Training Co.', 'specialist',
-   'Force-free obedience and puppy classes for high-energy doodles.', 'Denver, CO', true, 4.8),
-  ('33333333-3333-3333-3333-333333333333', 'Doodle Den Sitters', 'sitter',
-   'Vetted, cage-free boarding and house-sitting with web-cam check-ins.', 'Seattle, WA', true, 4.7),
+  ('11111111-1111-1111-1111-111111111111', 'Fresh Coat Mobile Grooming', 'grooming',
+   'Mobile grooming vans — full-service grooming for every breed at your curb.', 'Austin, TX', true, 'affiliate', 4.9),
+  ('22222222-2222-2222-2222-222222222222', 'HouseCall Mobile Vet', 'mobile_vet',
+   'Licensed mobile veterinarians for wellness exams, vaccines, and sick visits.', 'Denver, CO', true, 'affiliate', 4.8),
+  ('33333333-3333-3333-3333-333333333333', 'Scoop Troop', 'waste_removal',
+   'Weekly yard waste removal (pooper-scooper service) for any size dog.', 'Seattle, WA', true, 'affiliate', 4.7),
   ('44444444-4444-4444-4444-444444444444', 'PupFuel Fresh Food', 'food',
-   'Fresh, vet-formulated meals shipped monthly.', 'Remote', false, 4.6)
+   'Fresh, vet-formulated meals shipped monthly for all breeds and sizes.', 'Nationwide', true, 'affiliate', 4.6),
+  ('55555555-5555-5555-5555-555555555555', 'Trusted Paws Sitters', 'sitter',
+   'Vetted, in-home sitters and boarders with photo check-ins.', 'Seattle, WA', true, 'affiliate', 4.8)
 on conflict (id) do nothing;
 
 insert into public.services (vendor_id, title, description, price, recurring, interval)
 values
-  ('11111111-1111-1111-1111-111111111111', 'Full Groom', 'Bath, trim, nails, ears.', 85.00, false, 'once'),
+  ('11111111-1111-1111-1111-111111111111', 'Full Groom', 'Bath, haircut, nails, ears — priced by size/coat.', 85.00, false, 'once'),
   ('11111111-1111-1111-1111-111111111111', 'Monthly Grooming Plan', 'One full groom per month.', 75.00, true, 'month'),
-  ('22222222-2222-2222-2222-222222222222', 'Puppy Foundations (6 wk)', 'Group class series.', 199.00, false, 'once'),
-  ('33333333-3333-3333-3333-333333333333', 'Overnight Boarding', 'Per night, cage-free.', 65.00, false, 'once'),
-  ('44444444-4444-4444-4444-444444444444', 'Fresh Food Subscription', 'Monthly fresh-food delivery.', 120.00, true, 'month')
+  ('22222222-2222-2222-2222-222222222222', 'Mobile Wellness Exam', 'At-home checkup with a licensed vet.', 120.00, false, 'once'),
+  ('22222222-2222-2222-2222-222222222222', 'Core Vaccine Visit', 'Rabies + DHPP at your door.', 95.00, false, 'once'),
+  ('33333333-3333-3333-3333-333333333333', 'Weekly Yard Cleanup', 'One scoop visit per week.', 22.00, true, 'week'),
+  ('44444444-4444-4444-4444-444444444444', 'Fresh Food Subscription', 'Monthly fresh-food delivery, portioned to your dog.', 120.00, true, 'month'),
+  ('55555555-5555-5555-5555-555555555555', 'Overnight Boarding', 'Per night, in a vetted sitter''s home.', 65.00, false, 'once')
 on conflict do nothing;

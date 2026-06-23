@@ -9,7 +9,6 @@ export default function CreatePet() {
   const navigate = useNavigate()
   const [form, setForm] = useState({
     name: '',
-    doodle_type: '',
     breed: '',
     coat_type: '',
     birthdate: '',
@@ -34,7 +33,6 @@ export default function CreatePet() {
         .insert({
           owner_id: user.id,
           name: form.name,
-          doodle_type: form.doodle_type || null,
           breed: form.breed || null,
           coat_type: form.coat_type || null,
           birthdate: form.birthdate || null,
@@ -74,28 +72,15 @@ export default function CreatePet() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="label" htmlFor="doodle_type">Doodle type</label>
-            <input
-              id="doodle_type"
-              className="input"
-              value={form.doodle_type}
-              onChange={(e) => update('doodle_type', e.target.value)}
-              placeholder="Goldendoodle"
-            />
-          </div>
-          <div>
             <label className="label" htmlFor="breed">Breed / mix</label>
             <input
               id="breed"
               className="input"
               value={form.breed}
               onChange={(e) => update('breed', e.target.value)}
-              placeholder="mini_goldendoodle"
+              placeholder="Golden Retriever, Goldendoodle, mixed…"
             />
           </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="label" htmlFor="coat_type">Coat type</label>
             <select
@@ -105,11 +90,17 @@ export default function CreatePet() {
               onChange={(e) => update('coat_type', e.target.value)}
             >
               <option value="">—</option>
+              <option value="short">Short</option>
+              <option value="medium">Medium</option>
+              <option value="long">Long</option>
               <option value="wavy">Wavy</option>
               <option value="curly">Curly</option>
-              <option value="straight">Straight</option>
+              <option value="double">Double</option>
             </select>
           </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="label" htmlFor="sex">Sex</label>
             <select

@@ -46,7 +46,6 @@ export default function PetDetail() {
   const age = ageFrom(pet.birthdate)
 
   const facts: [string, string | null][] = [
-    ['Doodle type', pet.doodle_type],
     ['Breed', pet.breed],
     ['Coat', pet.coat_type],
     ['Sex', pet.sex],
@@ -70,13 +69,13 @@ export default function PetDetail() {
             />
           ) : (
             <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-brand-800 text-4xl">
-              🐩
+              🐶
             </div>
           )}
           <div>
             <h1 className="text-3xl font-semibold text-brand-50">{pet.name}</h1>
             <p className="text-brand-300">
-              {pet.doodle_type || pet.breed || 'Doodle'}
+              {pet.breed || 'Dog'}
             </p>
           </div>
         </div>

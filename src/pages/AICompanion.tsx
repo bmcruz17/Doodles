@@ -72,7 +72,8 @@ export default function AICompanion() {
           {pet.name}'s AI Companion
         </h1>
         <p className="text-sm text-brand-300">
-          Doodle-breed expert, grounded in {pet.name}'s profile and records.
+          Dog-care expert{pet.breed ? ` for ${pet.breed}s` : ''}, grounded in{' '}
+          {pet.name}'s profile and records.
         </p>
       </div>
 
