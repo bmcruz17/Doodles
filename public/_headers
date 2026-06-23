@@ -1,0 +1,7 @@
+# Cloudflare caches aggressively. Hashed assets are immutable and cached hard;
+# index.html must never be cached so a new BUILD_VERSION is served immediately.
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

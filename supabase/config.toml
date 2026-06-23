@@ -1,0 +1,13 @@
+# Supabase project configuration.
+# Set your project ref with: supabase link --project-ref <ref>
+
+[functions.ai-chat]
+# Requires a logged-in user; keep JWT verification on.
+verify_jwt = true
+
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.stripe-webhook]
+# Stripe calls this with a Stripe signature, not a Supabase JWT.
+verify_jwt = false
