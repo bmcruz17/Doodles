@@ -20,6 +20,7 @@ import Sitters from './pages/Sitters'
 import Friends from './pages/Friends'
 import Admin from './pages/Admin'
 import Creator from './pages/Creator'
+import WearableHealth from './pages/WearableHealth'
 
 export default function App() {
   const { loading } = useAuth()
@@ -55,6 +56,7 @@ export default function App() {
         <Route path="/pets/:petId" element={<PetDetail />} />
         <Route path="/pets/:petId/vault" element={<HealthVault />} />
         <Route path="/pets/:petId/companion" element={<AICompanion />} />
+        <Route path="/pets/:petId/health" element={<WearableHealth />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/partner" element={<Partner />} />
         <Route path="/sitters" element={<Sitters />} />

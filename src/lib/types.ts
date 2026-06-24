@@ -223,6 +223,49 @@ export type SitterProfile = {
   updated_at: string
 }
 
+export type Device = {
+  id: string
+  pet_id: string
+  owner_id: string
+  name: string
+  kind: string
+  serial: string | null
+  ingest_key: string
+  status: 'active' | 'inactive'
+  last_seen_at: string | null
+  created_at: string
+}
+
+export type DeviceDaily = {
+  id: string
+  pet_id: string
+  device_id: string | null
+  day: string
+  steps: number | null
+  distance_m: number | null
+  active_minutes: number | null
+  rest_minutes: number | null
+  sleep_minutes: number | null
+  avg_heart_rate: number | null
+  avg_resp_rate: number | null
+  water_ml: number | null
+  food_g: number | null
+  scratch_events: number | null
+  limp_score: number | null
+  play_minutes: number | null
+  created_at: string
+}
+
+export type DeviceAlert = {
+  id: string
+  pet_id: string
+  severity: 'info' | 'watch' | 'urgent'
+  title: string
+  detail: string
+  acknowledged: boolean
+  created_at: string
+}
+
 export type CreatorProfile = {
   id: string
   user_id: string
@@ -474,6 +517,24 @@ export type Database = {
         Row: CampaignDeal
         Insert: Partial<CampaignDeal> & { campaign_id: string; creator_id: string }
         Update: Partial<CampaignDeal>
+        Relationships: []
+      }
+      devices: {
+        Row: Device
+        Insert: Partial<Device> & { pet_id: string; owner_id: string }
+        Update: Partial<Device>
+        Relationships: []
+      }
+      device_daily: {
+        Row: DeviceDaily
+        Insert: Partial<DeviceDaily> & { pet_id: string; day: string }
+        Update: Partial<DeviceDaily>
+        Relationships: []
+      }
+      device_alerts: {
+        Row: DeviceAlert
+        Insert: Partial<DeviceAlert> & { pet_id: string; title: string }
+        Update: Partial<DeviceAlert>
         Relationships: []
       }
     }

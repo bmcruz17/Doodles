@@ -226,6 +226,15 @@ export default function PetDetail() {
             </div>
             <span className="text-brand-300">→</span>
           </Link>
+          <Link to={`/pets/${pet.id}/health`} className="card flex items-center justify-between gap-3 transition hover:border-sky-400">
+            <div>
+              <h3 className="font-semibold text-brand-900">Wearable &amp; vitals</h3>
+              <p className="mt-1 text-sm text-brand-600">
+                Activity, heart rate, sleep, gait — read by AI.
+              </p>
+            </div>
+            <span className="text-brand-300">→</span>
+          </Link>
           <Link to="/membership" className="card flex items-center justify-between gap-3 transition hover:border-sky-400">
             <div>
               <h3 className="font-semibold text-brand-900">Membership</h3>

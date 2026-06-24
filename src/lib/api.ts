@@ -130,6 +130,16 @@ export interface AdminOverview {
   }
 }
 
+export interface DeviceInsights {
+  summary: string
+  alerts: { severity: 'info' | 'watch' | 'urgent'; title: string; detail: string }[]
+}
+
+/** Run the AI interpretation over a pet's recent wearable data. */
+export function deviceInsights(petId: string) {
+  return invoke<DeviceInsights>('device-insights', { pet_id: petId })
+}
+
 export function adminOverview() {
   return invoke<AdminOverview>('admin', { action: 'overview' })
 }
