@@ -29,3 +29,17 @@ export function createCheckout(params: {
 }) {
   return invoke<CreateCheckoutResponse>('create-checkout', params)
 }
+
+export interface ParseRecordsResponse {
+  summary: string
+  added: { vaccinations: number; records: number }
+  items: { kind: string; label: string }[]
+}
+
+/**
+ * Smart upload: hand an already-uploaded document (storage path) to the AI
+ * parser, which extracts vaccinations + health records into the pet's vault.
+ */
+export function parseRecords(petId: string, path: string) {
+  return invoke<ParseRecordsResponse>('parse-records', { pet_id: petId, path })
+}

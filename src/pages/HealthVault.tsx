@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { parseRecords, type ParseRecordsResponse } from '../lib/api'
 import type {
   HealthRecord,
   HealthRecordType,
@@ -70,6 +71,8 @@ export default function HealthVault() {
         </p>
       </div>
 
+      <SmartUpload petId={pet.id} userId={user?.id ?? ''} onChange={refresh} />
+
       <RecordsSection
         petId={pet.id}
         userId={user?.id ?? ''}
@@ -119,6 +122,97 @@ function DocumentLink({ path }: { path: string }) {
     <button onClick={open} className="text-xs text-brand-600 underline hover:text-brand-800">
       {url ? 'Document' : 'View document'}
     </button>
+  )
+}
+
+// --------------------------------------------------------------------------
+// Smart upload — AI parses a document into vault entries
+// --------------------------------------------------------------------------
+function SmartUpload({
+  petId,
+  userId,
+  onChange,
+}: {
+  petId: string
+  userId: string
+  onChange: () => void
+}) {
+  const [busy, setBusy] = useState(false)
+  const [result, setResult] = useState<ParseRecordsResponse | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-uploading the same file
+    if (!file || !userId) return
+    setBusy(true)
+    setError(null)
+    setResult(null)
+    try {
+      // Store the original document first, then let the parser read it.
+      const path = await uploadDocument(userId, petId, file)
+      const res = await parseRecords(petId, path)
+      setResult(res)
+      onChange()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not read that document')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="card border-sky-200 bg-sky-50/60">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">
+            Smart upload
+          </p>
+          <h2 className="text-lg font-semibold text-brand-900">
+            Let AI sort your paperwork
+          </h2>
+          <p className="mt-1 text-sm text-brand-600">
+            Upload a vet record, vaccine certificate, or lab result. We read it and
+            file each vaccination and visit into the right place automatically.
+          </p>
+        </div>
+        <label className="btn-primary shrink-0 cursor-pointer text-center">
+          <input
+            type="file"
+            accept="image/*,application/pdf"
+            capture="environment"
+            className="hidden"
+            onChange={onFile}
+            disabled={busy}
+          />
+          {busy ? 'Reading…' : 'Upload a document'}
+        </label>
+      </div>
+
+      {error && <p className="mt-3 text-sm text-red-500">{error}</p>}
+
+      {result && (
+        <div className="mt-3 rounded-xl border border-sky-200 bg-white p-3">
+          <p className="text-sm text-brand-800">{result.summary}</p>
+          {result.items.length > 0 && (
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {result.items.map((it, i) => (
+                <li
+                  key={i}
+                  className="rounded-md bg-sky-100 px-2 py-0.5 text-xs text-sky-800"
+                >
+                  {it.kind === 'vaccination' ? '💉 ' : ''}
+                  {it.label}
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-2 text-xs text-brand-500">
+            Review the new entries below and edit anything the AI got wrong.
+          </p>
+        </div>
+      )}
+    </section>
   )
 }
 
