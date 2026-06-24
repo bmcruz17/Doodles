@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { uploadPetPhoto } from '../lib/photos'
 import type { Sex } from '../lib/types'
 
 // Parse a typed birthday into an ISO date (YYYY-MM-DD), or null if blank/invalid.
@@ -40,11 +41,19 @@ export default function CreatePet() {
     weight_lbs: '',
     sex: 'unknown' as Sex,
   })
+  const [photo, setPhoto] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }))
+  }
+
+  function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0] ?? null
+    setPhoto(f)
+    setPreview(f ? URL.createObjectURL(f) : null)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -77,6 +86,17 @@ export default function CreatePet() {
         .select()
         .single()
       if (insertError) throw insertError
+
+      // Upload the photo (if any) now that we have the pet id, then save its path.
+      if (photo) {
+        try {
+          const path = await uploadPetPhoto(user.id, data.id, photo)
+          await supabase.from('pets').update({ photo_url: path }).eq('id', data.id)
+        } catch {
+          // Non-fatal: the pet is created; they can add a photo later.
+        }
+      }
+
       navigate(`/pets/${data.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create pet')
@@ -87,10 +107,35 @@ export default function CreatePet() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <h1 className="mb-6 text-2xl font-semibold text-brand-50">
+      <h1 className="mb-6 text-2xl font-semibold text-brand-900">
         New pet profile
       </h1>
       <form onSubmit={handleSubmit} className="card space-y-4">
+        <div className="flex items-center gap-4">
+          {preview ? (
+            <img
+              src={preview}
+              alt="Preview"
+              className="h-20 w-20 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-100 text-3xl">
+              🐶
+            </div>
+          )}
+          <div>
+            <label className="label" htmlFor="photo">Photo</label>
+            <input
+              id="photo"
+              type="file"
+              accept="image/*"
+              className="input"
+              onChange={onPhotoChange}
+            />
+            <p className="mt-1 text-xs text-brand-500">Optional — add a pic of your pup.</p>
+          </div>
+        </div>
+
         <div>
           <label className="label" htmlFor="name">Name *</label>
           <input

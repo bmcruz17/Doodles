@@ -30,8 +30,8 @@ export default function Login() {
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2">
           <img src="/doodle.svg" alt={BRAND} className="h-12 w-12" />
-          <h1 className="text-2xl font-semibold text-brand-50">Welcome back</h1>
-          <p className="text-sm text-brand-300">Sign in to your {BRAND} account</p>
+          <h1 className="text-2xl font-semibold text-brand-900">Welcome back</h1>
+          <p className="text-sm text-brand-600">Sign in to your {BRAND} account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="card space-y-4">
@@ -67,13 +67,13 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-brand-300">
+        <p className="mt-4 text-center text-sm text-brand-600">
           No account?{' '}
-          <Link to="/signup" className="font-medium text-brand-300 underline hover:text-brand-100">
+          <Link to="/signup" className="font-medium text-brand-600 underline hover:text-brand-800">
             Create one
           </Link>
         </p>
-        <p className="mt-6 text-center font-mono text-xs text-brand-700">
+        <p className="mt-6 text-center font-mono text-xs text-brand-400">
           {BUILD_VERSION}
         </p>
       </div>

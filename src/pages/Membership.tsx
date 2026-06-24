@@ -84,8 +84,8 @@ export default function Membership() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-brand-50">Membership</h1>
-      <p className="mt-1 max-w-2xl text-sm text-brand-300">
+      <h1 className="text-2xl font-semibold text-brand-900">Membership</h1>
+      <p className="mt-1 max-w-2xl text-sm text-brand-600">
         One membership per pet unlocks the AI companion, health vault,
         marketplace discounts, and member travel rates.
       </p>
@@ -108,8 +108,8 @@ export default function Membership() {
       )}
 
       {currentSub && (
-        <div className="card mt-4 border-brand-600 bg-brand-900/50">
-          <p className="text-sm text-brand-100">
+        <div className="card mt-4 border-brand-300 bg-white">
+          <p className="text-sm text-brand-800">
             This pet has an{' '}
             <span className="font-semibold capitalize">{currentSub.tier}</span>{' '}
             membership ({currentSub.status}).
@@ -123,19 +123,19 @@ export default function Membership() {
         {TIERS.map((t) => (
           <div key={t.tier} className="card flex flex-col">
             <div className="flex items-baseline justify-between">
-              <h2 className="text-lg font-semibold capitalize text-brand-50">
+              <h2 className="text-lg font-semibold capitalize text-brand-900">
                 {t.tier}
               </h2>
               <div className="text-right">
-                <span className="text-2xl font-bold text-brand-50">{t.price}</span>
-                <span className="text-sm text-brand-400">/pet/mo</span>
+                <span className="text-2xl font-bold text-brand-900">{t.price}</span>
+                <span className="text-sm text-brand-500">/pet/mo</span>
               </div>
             </div>
-            <p className="mt-1 text-sm text-brand-300">{t.blurb}</p>
-            <ul className="mt-4 space-y-1 text-sm text-brand-200">
+            <p className="mt-1 text-sm text-brand-600">{t.blurb}</p>
+            <ul className="mt-4 space-y-1 text-sm text-brand-700">
               {t.perks.map((p) => (
                 <li key={p} className="flex items-center gap-2">
-                  <span className="text-brand-400">✓</span> {p}
+                  <span className="text-brand-500">✓</span> {p}
                 </li>
               ))}
             </ul>

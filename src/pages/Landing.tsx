@@ -47,9 +47,9 @@ export default function Landing() {
   const { session } = useAuth()
 
   return (
-    <div className="min-h-screen bg-brand-950 text-brand-50">
+    <div className="min-h-screen bg-brand-50 text-brand-900">
       {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-brand-800/60 bg-brand-950/80 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-brand-200/60 bg-brand-50/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
           <Link to="/" className="flex items-center gap-2">
             <img src="/doodle.svg" alt={BRAND} className="h-8 w-8" />
@@ -77,21 +77,21 @@ export default function Landing() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div
-          className="pointer-events-none absolute inset-0 opacity-60"
+          className="pointer-events-none absolute inset-0"
           style={{
             background:
-              'radial-gradient(60% 60% at 50% 0%, rgba(34,159,99,0.25) 0%, rgba(6,37,26,0) 70%)',
+              'radial-gradient(70% 60% at 50% -10%, rgba(78,166,247,0.22) 0%, rgba(244,166,35,0.10) 38%, rgba(250,246,239,0) 72%)',
           }}
         />
         <div className="relative mx-auto max-w-3xl px-4 py-20 text-center sm:py-28">
-          <span className="inline-block rounded-full border border-brand-700 bg-brand-900/60 px-3 py-1 text-xs font-medium text-brand-200">
+          <span className="inline-block rounded-full border border-brand-200 bg-white px-3 py-1 text-xs font-medium text-brand-700">
             For every breed 🐶
           </span>
           <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-6xl">
             Everything your dog needs,
-            <span className="text-brand-300"> in one place.</span>
+            <span className="text-sky-600"> in one place.</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-lg text-brand-200">
+          <p className="mx-auto mt-5 max-w-xl text-lg text-brand-700">
             {BRAND} bundles an AI care companion, a health-records vault,
             on-demand services, and pet travel into one membership — so you can
             stop juggling ten apps for one dog.
@@ -104,7 +104,7 @@ export default function Landing() {
               See how it works
             </a>
           </div>
-          <p className="mt-4 text-xs text-brand-400">
+          <p className="mt-4 text-xs text-brand-500">
             No credit card to start · Built for doodles, made for every dog.
           </p>
         </div>
@@ -117,7 +117,7 @@ export default function Landing() {
             <div key={f.title} className="card">
               <div className="text-3xl">{f.icon}</div>
               <h3 className="mt-3 text-lg font-semibold">{f.title}</h3>
-              <p className="mt-1 text-sm text-brand-300">{f.body}</p>
+              <p className="mt-1 text-sm text-brand-600">{f.body}</p>
             </div>
           ))}
         </div>
@@ -128,18 +128,18 @@ export default function Landing() {
         <h2 className="text-center text-2xl font-semibold sm:text-3xl">
           How {BRAND} works
         </h2>
-        <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-brand-300">
+        <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-brand-600">
           We're the booking middleman: you tap a button, we fulfill it through
           pre-negotiated, vetted partners — bringing services in-house as we grow.
         </p>
         <div className="mt-10 grid gap-6 sm:grid-cols-3">
           {steps.map((s) => (
             <div key={s.n} className="text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-500 text-lg font-bold text-white">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-sky-600 text-lg font-bold text-white">
                 {s.n}
               </div>
               <h3 className="mt-4 font-semibold">{s.title}</h3>
-              <p className="mx-auto mt-1 max-w-xs text-sm text-brand-300">
+              <p className="mx-auto mt-1 max-w-xs text-sm text-brand-600">
                 {s.body}
               </p>
             </div>
@@ -149,12 +149,12 @@ export default function Landing() {
 
       {/* Membership band */}
       <section className="mx-auto max-w-6xl px-4 py-8">
-        <div className="card flex flex-col items-center gap-4 border-brand-700 bg-gradient-to-br from-brand-800/60 to-brand-900/60 text-center sm:flex-row sm:text-left">
+        <div className="card flex flex-col items-center gap-4 border-brand-200 bg-gradient-to-br from-sky-100 to-brand-100 text-center sm:flex-row sm:text-left">
           <div className="flex-1">
             <h3 className="text-xl font-semibold">
               One membership. Every dog need covered.
             </h3>
-            <p className="mt-1 text-sm text-brand-200">
+            <p className="mt-1 text-sm text-brand-700">
               Marketplace discounts, the AI companion, your health vault, member
               travel rates — plus AAA-style access to private dog parks and
               dog-welcoming places, coming soon.
@@ -170,20 +170,20 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-brand-800/60">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-brand-400 sm:flex-row">
+      <footer className="border-t border-brand-200/60">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-brand-500 sm:flex-row">
           <div className="flex items-center gap-2">
             <img src="/doodle.svg" alt="" className="h-6 w-6" />
             <span>{BRAND} — care for every breed</span>
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/login" className="hover:text-brand-100">
+            <Link to="/login" className="hover:text-brand-800">
               Log in
             </Link>
-            <Link to="/signup" className="hover:text-brand-100">
+            <Link to="/signup" className="hover:text-brand-800">
               Get started
             </Link>
-            <span className="font-mono text-xs text-brand-700">
+            <span className="font-mono text-xs text-brand-400">
               {BUILD_VERSION}
             </span>
           </div>

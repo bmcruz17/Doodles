@@ -24,8 +24,8 @@ const OPTIONS = [
 export default function Travel() {
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-brand-50">Travel</h1>
-      <p className="mt-1 max-w-2xl text-sm text-brand-300">
+      <h1 className="text-2xl font-semibold text-brand-900">Travel</h1>
+      <p className="mt-1 max-w-2xl text-sm text-brand-600">
         The lifestyle layer: travel planning built around traveling with your
         dog. Booking opens in a later phase — here's what's coming.
       </p>
@@ -34,8 +34,8 @@ export default function Travel() {
         {OPTIONS.map((o) => (
           <div key={o.title} className="card">
             <div className="text-3xl">{o.icon}</div>
-            <h2 className="mt-2 text-lg font-semibold text-brand-50">{o.title}</h2>
-            <p className="mt-1 text-sm text-brand-300">{o.body}</p>
+            <h2 className="mt-2 text-lg font-semibold text-brand-900">{o.title}</h2>
+            <p className="mt-1 text-sm text-brand-600">{o.body}</p>
             <button className="btn-ghost mt-4 text-sm" disabled>
               Plan a trip (coming soon)
             </button>
@@ -43,14 +43,14 @@ export default function Travel() {
         ))}
       </div>
 
-      <div className="card mt-6 border-brand-700 bg-brand-900/40">
-        <h3 className="font-semibold text-brand-50">
+      <div className="card mt-6 border-brand-200 bg-white">
+        <h3 className="font-semibold text-brand-900">
           🅿️ Member park &amp; place access
-          <span className="ml-2 rounded-full bg-brand-800 px-2 py-0.5 align-middle text-xs font-normal text-brand-300">
+          <span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 align-middle text-xs font-normal text-brand-600">
             on the roadmap
           </span>
         </h3>
-        <p className="mt-1 text-sm text-brand-300">
+        <p className="mt-1 text-sm text-brand-600">
           An AAA-style perk network: membership unlocks access to private dog
           parks, sniff spots, and dog-welcoming places wherever you travel —
           plus member-only travel rates and concierge logistics.

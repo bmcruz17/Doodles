@@ -3,7 +3,7 @@ import Navbar from './Navbar'
 
 export default function Layout() {
   return (
-    <div className="min-h-screen bg-brand-950">
+    <div className="min-h-screen bg-brand-50">
       <Navbar />
       <main className="mx-auto max-w-6xl px-4 py-8">
         <Outlet />

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { BRAND } from '../version'
+import PetAvatar from '../components/PetAvatar'
 import type { Pet } from '../lib/types'
 
 export default function Dashboard() {
@@ -26,7 +27,7 @@ export default function Dashboard() {
   }, [])
 
   if (loading) {
-    return <p className="text-brand-300">Loading your pack…</p>
+    return <p className="text-brand-600">Loading your pack…</p>
   }
 
   // First-login onboarding: prompt to create a pet profile.
@@ -35,10 +36,10 @@ export default function Dashboard() {
       <div className="mx-auto max-w-md text-center">
         <div className="card">
           <img src="/doodle.svg" alt="" className="mx-auto mb-4 h-16 w-16" />
-          <h1 className="text-xl font-semibold text-brand-50">
+          <h1 className="text-xl font-semibold text-brand-900">
             Welcome to {BRAND}!
           </h1>
-          <p className="mt-2 text-sm text-brand-300">
+          <p className="mt-2 text-sm text-brand-600">
             Let's start by creating a profile for your dog. It powers the AI
             companion, your health vault, and member perks.
           </p>
@@ -53,7 +54,7 @@ export default function Dashboard() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-brand-50">Your pack</h1>
+        <h1 className="text-2xl font-semibold text-brand-900">Your pack</h1>
         <Link to="/pets/new" className="btn-primary">
           + Add a pet
         </Link>
@@ -61,26 +62,16 @@ export default function Dashboard() {
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {pets.map((pet) => (
-          <Link key={pet.id} to={`/pets/${pet.id}`} className="card transition hover:border-brand-600">
+          <Link key={pet.id} to={`/pets/${pet.id}`} className="card transition hover:border-brand-300">
             <div className="flex items-center gap-4">
-              {pet.photo_url ? (
-                <img
-                  src={pet.photo_url}
-                  alt={pet.name}
-                  className="h-16 w-16 rounded-full object-cover"
-                />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-800 text-2xl">
-                  🐶
-                </div>
-              )}
+              <PetAvatar photoUrl={pet.photo_url} name={pet.name} size={64} />
               <div>
-                <h2 className="text-lg font-semibold text-brand-50">{pet.name}</h2>
-                <p className="text-sm text-brand-300">
+                <h2 className="text-lg font-semibold text-brand-900">{pet.name}</h2>
+                <p className="text-sm text-brand-600">
                   {pet.breed || 'Dog'}
                 </p>
                 {pet.coat_type && (
-                  <p className="text-xs text-brand-400">{pet.coat_type} coat</p>
+                  <p className="text-xs text-brand-500">{pet.coat_type} coat</p>
                 )}
               </div>
             </div>

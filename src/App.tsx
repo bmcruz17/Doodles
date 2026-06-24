@@ -19,7 +19,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-brand-200">
+      <div className="flex min-h-screen items-center justify-center text-brand-700">
         Loading…
       </div>
     )

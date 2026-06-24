@@ -52,19 +52,19 @@ export default function HealthVault() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [petId])
 
-  if (loading) return <p className="text-brand-300">Loading vault…</p>
-  if (!pet) return <p className="text-brand-300">Pet not found.</p>
+  if (loading) return <p className="text-brand-600">Loading vault…</p>
+  if (!pet) return <p className="text-brand-600">Pet not found.</p>
 
   return (
     <div className="space-y-8">
       <div>
-        <Link to={`/pets/${pet.id}`} className="text-sm text-brand-300 hover:text-brand-100">
+        <Link to={`/pets/${pet.id}`} className="text-sm text-brand-600 hover:text-brand-800">
           ← {pet.name}
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-brand-50">
+        <h1 className="mt-2 text-2xl font-semibold text-brand-900">
           {pet.name}'s Health Vault
         </h1>
-        <p className="text-sm text-brand-300">
+        <p className="text-sm text-brand-600">
           Records, vaccinations, and documents — the foundation for {pet.name}'s
           AI companion.
         </p>
@@ -116,7 +116,7 @@ function DocumentLink({ path }: { path: string }) {
     }
   }
   return (
-    <button onClick={open} className="text-xs text-brand-300 underline hover:text-brand-100">
+    <button onClick={open} className="text-xs text-brand-600 underline hover:text-brand-800">
       {url ? 'Document' : 'View document'}
     </button>
   )
@@ -180,7 +180,7 @@ function RecordsSection({
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-brand-50">Health records</h2>
+        <h2 className="text-lg font-semibold text-brand-900">Health records</h2>
         <button onClick={() => setOpen((o) => !o)} className="btn-ghost text-sm">
           {open ? 'Close' : '+ Add record'}
         </button>
@@ -249,22 +249,22 @@ function RecordsSection({
       )}
 
       {records.length === 0 ? (
-        <p className="text-sm text-brand-400">No records yet.</p>
+        <p className="text-sm text-brand-500">No records yet.</p>
       ) : (
         <ul className="space-y-2">
           {records.map((r) => (
             <li key={r.id} className="card flex items-start justify-between gap-4 py-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-md bg-brand-800 px-2 py-0.5 text-xs uppercase tracking-wide text-brand-200">
+                  <span className="rounded-md bg-brand-100 px-2 py-0.5 text-xs uppercase tracking-wide text-brand-700">
                     {r.record_type.replace('_', ' ')}
                   </span>
-                  <span className="text-sm font-medium text-brand-50">
+                  <span className="text-sm font-medium text-brand-900">
                     {r.data?.title || 'Untitled'}
                   </span>
                 </div>
                 {r.data?.notes && (
-                  <p className="mt-1 text-sm text-brand-300">{r.data.notes}</p>
+                  <p className="mt-1 text-sm text-brand-600">{r.data.notes}</p>
                 )}
                 {r.document_url && (
                   <div className="mt-1">
@@ -272,7 +272,7 @@ function RecordsSection({
                   </div>
                 )}
               </div>
-              <time className="shrink-0 text-xs text-brand-400">
+              <time className="shrink-0 text-xs text-brand-500">
                 {new Date(r.recorded_at).toLocaleDateString()}
               </time>
             </li>
@@ -339,16 +339,16 @@ function VaccinationsSection({
   }
 
   function expiryClass(expires_at: string | null): string {
-    if (!expires_at) return 'text-brand-400'
+    if (!expires_at) return 'text-brand-500'
     return new Date(expires_at) < new Date()
       ? 'text-red-400'
-      : 'text-brand-300'
+      : 'text-brand-600'
   }
 
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-brand-50">Vaccinations</h2>
+        <h2 className="text-lg font-semibold text-brand-900">Vaccinations</h2>
         <button onClick={() => setOpen((o) => !o)} className="btn-ghost text-sm">
           {open ? 'Close' : '+ Add vaccination'}
         </button>
@@ -413,17 +413,17 @@ function VaccinationsSection({
       )}
 
       {vaccinations.length === 0 ? (
-        <p className="text-sm text-brand-400">No vaccinations yet.</p>
+        <p className="text-sm text-brand-500">No vaccinations yet.</p>
       ) : (
         <ul className="space-y-2">
           {vaccinations.map((v) => (
             <li key={v.id} className="card flex items-start justify-between gap-4 py-3">
               <div>
-                <span className="text-sm font-medium text-brand-50">
+                <span className="text-sm font-medium text-brand-900">
                   {v.vaccine}
                 </span>
                 {v.veterinarian && (
-                  <p className="text-xs text-brand-400">{v.veterinarian}</p>
+                  <p className="text-xs text-brand-500">{v.veterinarian}</p>
                 )}
                 {v.certificate_url && (
                   <div className="mt-1">
@@ -432,7 +432,7 @@ function VaccinationsSection({
                 )}
               </div>
               <div className="shrink-0 text-right text-xs">
-                <div className="text-brand-400">
+                <div className="text-brand-500">
                   Given {new Date(v.administered_at).toLocaleDateString()}
                 </div>
                 {v.expires_at && (

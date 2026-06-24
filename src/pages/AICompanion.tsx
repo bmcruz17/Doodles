@@ -60,32 +60,32 @@ export default function AICompanion() {
     }
   }
 
-  if (!pet) return <p className="text-brand-300">Loading…</p>
+  if (!pet) return <p className="text-brand-600">Loading…</p>
 
   return (
     <div className="mx-auto flex h-[calc(100vh-10rem)] max-w-2xl flex-col">
       <div className="mb-3">
-        <Link to={`/pets/${pet.id}`} className="text-sm text-brand-300 hover:text-brand-100">
+        <Link to={`/pets/${pet.id}`} className="text-sm text-brand-600 hover:text-brand-800">
           ← {pet.name}
         </Link>
-        <h1 className="mt-1 text-2xl font-semibold text-brand-50">
+        <h1 className="mt-1 text-2xl font-semibold text-brand-900">
           {pet.name}'s AI Companion
         </h1>
-        <p className="text-sm text-brand-300">
+        <p className="text-sm text-brand-600">
           Dog-care expert{pet.breed ? ` for ${pet.breed}s` : ''}, grounded in{' '}
           {pet.name}'s profile and records.
         </p>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto rounded-2xl border border-brand-800 bg-brand-900/40 p-4">
+      <div className="flex-1 space-y-4 overflow-y-auto rounded-2xl border border-brand-200 bg-white p-4">
         {messages.length === 0 && (
-          <div className="flex h-full flex-col items-center justify-center text-center text-brand-400">
+          <div className="flex h-full flex-col items-center justify-center text-center text-brand-500">
             <span className="text-4xl">🤖</span>
             <p className="mt-2 max-w-sm text-sm">
               Ask me anything about {pet.name} — coat care, grooming cycles,
               nutrition, training, or whether something looks normal.
             </p>
-            <p className="mt-3 max-w-sm text-xs text-brand-500">
+            <p className="mt-3 max-w-sm text-xs text-brand-600">
               I'm an AI assistant and not a substitute for your veterinarian.
             </p>
           </div>
@@ -98,8 +98,8 @@ export default function AICompanion() {
             <div
               className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm ${
                 m.role === 'user'
-                  ? 'bg-brand-500 text-white'
-                  : 'bg-brand-800 text-brand-50'
+                  ? 'bg-sky-600 text-white'
+                  : 'bg-brand-100 text-brand-900'
               }`}
             >
               {m.content}
@@ -108,7 +108,7 @@ export default function AICompanion() {
         ))}
         {sending && (
           <div className="flex justify-start">
-            <div className="rounded-2xl bg-brand-800 px-4 py-2 text-sm text-brand-300">
+            <div className="rounded-2xl bg-brand-100 px-4 py-2 text-sm text-brand-600">
               Thinking…
             </div>
           </div>

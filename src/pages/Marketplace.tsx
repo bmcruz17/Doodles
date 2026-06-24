@@ -64,8 +64,8 @@ export default function Marketplace() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-brand-50">Marketplace</h1>
-      <p className="mb-6 mt-1 max-w-2xl text-sm text-brand-300">
+      <h1 className="text-2xl font-semibold text-brand-900">Marketplace</h1>
+      <p className="mb-6 mt-1 max-w-2xl text-sm text-brand-600">
         Book grooming, mobile vet, sitting, waste removal, food and more in a
         tap. You book — we arrange it with a vetted local partner at a
         pre-negotiated price. (Payments &amp; instant scheduling land in Phase 2;
@@ -79,8 +79,8 @@ export default function Marketplace() {
             onClick={() => setCategory(c)}
             className={`rounded-full px-3 py-1 text-sm capitalize transition ${
               category === c
-                ? 'bg-brand-500 text-white'
-                : 'bg-brand-900 text-brand-300 hover:bg-brand-800'
+                ? 'bg-sky-600 text-white'
+                : 'bg-white text-brand-600 hover:bg-brand-100'
             }`}
           >
             {labelFor(c)}
@@ -89,23 +89,23 @@ export default function Marketplace() {
       </div>
 
       {loading ? (
-        <p className="text-brand-300">Loading vendors…</p>
+        <p className="text-brand-600">Loading vendors…</p>
       ) : filtered.length === 0 ? (
-        <p className="text-sm text-brand-400">No vendors in this category yet.</p>
+        <p className="text-sm text-brand-500">No vendors in this category yet.</p>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2">
           {filtered.map((v) => (
             <div key={v.id} className="card">
               <div className="flex items-start justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-brand-50">{v.name}</h2>
-                  <p className="text-xs uppercase tracking-wide text-brand-400">
+                  <h2 className="text-lg font-semibold text-brand-900">{v.name}</h2>
+                  <p className="text-xs uppercase tracking-wide text-brand-500">
                     {v.category.replace('_', ' ')}
                     {v.location ? ` · ${v.location}` : ''}
                   </p>
                 </div>
                 {v.rating != null && (
-                  <span className="rounded-md bg-brand-800 px-2 py-1 text-xs text-brand-100">
+                  <span className="rounded-md bg-brand-100 px-2 py-1 text-xs text-brand-800">
                     ★ {v.rating}
                   </span>
                 )}
@@ -113,26 +113,26 @@ export default function Marketplace() {
 
               <div className="mt-2 flex flex-wrap gap-2">
                 {v.verified && (
-                  <span className="inline-block rounded-full bg-brand-700/60 px-2 py-0.5 text-xs text-brand-100">
+                  <span className="inline-block rounded-full bg-brand-200 px-2 py-0.5 text-xs text-brand-800">
                     ✓ Verified partner
                   </span>
                 )}
-                <span className="inline-block rounded-full bg-brand-800 px-2 py-0.5 text-xs text-brand-300">
+                <span className="inline-block rounded-full bg-brand-100 px-2 py-0.5 text-xs text-brand-600">
                   {v.fulfillment === 'in_house' ? 'PackHub fleet' : 'Affiliate'}
                 </span>
               </div>
 
               {v.description && (
-                <p className="mt-2 text-sm text-brand-300">{v.description}</p>
+                <p className="mt-2 text-sm text-brand-600">{v.description}</p>
               )}
 
               {v.services.length > 0 && (
-                <ul className="mt-3 space-y-2 border-t border-brand-800 pt-3">
+                <ul className="mt-3 space-y-2 border-t border-brand-200 pt-3">
                   {v.services.map((s) => (
                     <li key={s.id} className="flex items-center justify-between gap-3 text-sm">
                       <div>
-                        <span className="text-brand-100">{s.title}</span>
-                        <span className="ml-2 text-brand-400">
+                        <span className="text-brand-800">{s.title}</span>
+                        <span className="ml-2 text-brand-500">
                           ${Number(s.price).toFixed(2)}
                           {s.recurring && s.interval ? `/${s.interval}` : ''}
                         </span>
@@ -226,10 +226,10 @@ function BookingModal({
         {done ? (
           <div className="text-center">
             <div className="text-4xl">✅</div>
-            <h2 className="mt-2 text-lg font-semibold text-brand-50">
+            <h2 className="mt-2 text-lg font-semibold text-brand-900">
               Request sent
             </h2>
-            <p className="mt-1 text-sm text-brand-300">
+            <p className="mt-1 text-sm text-brand-600">
               We'll coordinate {service.title} with {vendor.name} and confirm
               your time. Track it under your bookings.
             </p>
@@ -240,10 +240,10 @@ function BookingModal({
         ) : (
           <form onSubmit={submit} className="space-y-4">
             <div>
-              <h2 className="text-lg font-semibold text-brand-50">
+              <h2 className="text-lg font-semibold text-brand-900">
                 Book {service.title}
               </h2>
-              <p className="text-sm text-brand-300">
+              <p className="text-sm text-brand-600">
                 {vendor.name} · ${amount.toFixed(2)}
                 {service.recurring && service.interval
                   ? `/${service.interval}`
@@ -252,7 +252,7 @@ function BookingModal({
             </div>
 
             {pets.length === 0 ? (
-              <p className="text-sm text-brand-400">
+              <p className="text-sm text-brand-500">
                 Add a pet first to book a service.
               </p>
             ) : (
