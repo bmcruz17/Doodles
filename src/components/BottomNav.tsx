@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 // App-style bottom tab bar for phones (hidden on >= sm, where the top nav shows).
 const tabs = [
   { to: '/dashboard', label: 'Pets', icon: PawIcon, end: true },
+  { to: '/feed', label: 'Pack', icon: FeedIcon },
   { to: '/marketplace', label: 'Services', icon: ShopIcon },
   { to: '/travel', label: 'Travel', icon: PlaneIcon },
   { to: '/membership', label: 'Member', icon: StarIcon },
@@ -43,6 +44,15 @@ function PawIcon() {
       <circle cx="15.5" cy="7.5" r="1.8" />
       <circle cx="18" cy="11.5" r="1.6" />
       <path d="M12 12c-2.6 0-4.7 1.9-4.7 4 0 1.6 1.3 2.4 2.8 2.4.9 0 1.3-.3 1.9-.3s1 .3 1.9.3c1.5 0 2.8-.8 2.8-2.4 0-2.1-2.1-4-4.7-4Z" />
+    </svg>
+  )
+}
+function FeedIcon() {
+  return (
+    <svg className={svg} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="4" y="4" width="16" height="16" rx="3" />
+      <path d="M4 15l4-3 3 2 4-4 5 4" />
+      <circle cx="9" cy="9" r="1.4" />
     </svg>
   )
 }

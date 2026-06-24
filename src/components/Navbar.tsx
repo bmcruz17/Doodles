@@ -4,6 +4,7 @@ import { BUILD_VERSION, BRAND } from '../version'
 
 const links = [
   { to: '/dashboard', label: 'Dashboard', end: true },
+  { to: '/feed', label: 'Pack' },
   { to: '/marketplace', label: 'Marketplace' },
   { to: '/travel', label: 'Travel' },
   { to: '/membership', label: 'Membership' },

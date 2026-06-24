@@ -188,6 +188,34 @@ export type TravelBooking = {
   updated_at: string
 }
 
+export type Post = {
+  id: string
+  author_id: string
+  author_name: string
+  pet_id: string | null
+  pet_name: string | null
+  caption: string
+  image_url: string | null
+  location: string | null
+  hashtags: string[]
+  created_at: string
+}
+
+export type PostComment = {
+  id: string
+  post_id: string
+  author_id: string
+  author_name: string
+  body: string
+  created_at: string
+}
+
+export type PostLike = {
+  post_id: string
+  user_id: string
+  created_at: string
+}
+
 export type ChatMessage = {
   role: 'user' | 'assistant'
   content: string
@@ -271,6 +299,27 @@ export type Database = {
         Row: AiConversation
         Insert: Partial<AiConversation> & { pet_id: string }
         Update: Partial<AiConversation>
+        Relationships: []
+      }
+      posts: {
+        Row: Post
+        Insert: Omit<Post, 'id' | 'created_at'> & {
+          id?: string
+          hashtags?: string[]
+        }
+        Update: Partial<Post>
+        Relationships: []
+      }
+      post_comments: {
+        Row: PostComment
+        Insert: Omit<PostComment, 'id' | 'created_at'> & { id?: string }
+        Update: Partial<PostComment>
+        Relationships: []
+      }
+      post_likes: {
+        Row: PostLike
+        Insert: Omit<PostLike, 'created_at'> & { created_at?: string }
+        Update: Partial<PostLike>
         Relationships: []
       }
     }

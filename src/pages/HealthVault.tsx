@@ -169,11 +169,12 @@ function SmartUpload({
             Smart upload
           </p>
           <h2 className="text-lg font-semibold text-brand-900">
-            Let AI sort your paperwork
+            Just upload — AI sorts it for you
           </h2>
           <p className="mt-1 text-sm text-brand-600">
-            Upload a vet record, vaccine certificate, or lab result. We read it and
-            file each vaccination and visit into the right place automatically.
+            Add any photo or file — a vaccine card, vet summary, lab result, even a
+            phone snapshot. You don't have to say what it is. We read it and file
+            each vaccination and visit into the right place automatically.
           </p>
         </div>
         <label className="btn-primary shrink-0 cursor-pointer text-center">
@@ -185,7 +186,7 @@ function SmartUpload({
             onChange={onFile}
             disabled={busy}
           />
-          {busy ? 'Reading…' : 'Upload a document'}
+          {busy ? 'Reading…' : 'Upload photo or file'}
         </label>
       </div>
 
@@ -276,7 +277,7 @@ function RecordsSection({
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-brand-900">Health records</h2>
         <button onClick={() => setOpen((o) => !o)} className="btn-ghost text-sm">
-          {open ? 'Close' : '+ Add record'}
+          {open ? 'Close' : 'Add manually'}
         </button>
       </div>
 
