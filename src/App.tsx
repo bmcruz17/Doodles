@@ -13,6 +13,7 @@ import Marketplace from './pages/Marketplace'
 import Travel from './pages/Travel'
 import Membership from './pages/Membership'
 import CreatePet from './pages/CreatePet'
+import CreatePetChat from './pages/CreatePetChat'
 
 export default function App() {
   const { loading } = useAuth()
@@ -39,7 +40,8 @@ export default function App() {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/pets/new" element={<CreatePet />} />
+        <Route path="/pets/new" element={<CreatePetChat />} />
+        <Route path="/pets/new/form" element={<CreatePet />} />
         <Route path="/pets/:petId" element={<PetDetail />} />
         <Route path="/pets/:petId/vault" element={<HealthVault />} />
         <Route path="/pets/:petId/companion" element={<AICompanion />} />
