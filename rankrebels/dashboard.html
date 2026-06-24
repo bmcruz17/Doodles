@@ -128,6 +128,14 @@
   .seg button{background:transparent;border:0;color:var(--muted);font-weight:600;font-size:13px;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:inherit}
   .seg button.on{background:linear-gradient(100deg,var(--brand),var(--accent));color:#fff}
   .empty{color:var(--muted-2);text-align:center;padding:40px;font-size:14px}
+  .assume{padding:16px 18px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:780px){.assume{grid-template-columns:1fr 1fr}}
+  .assume .f label{display:block;margin-bottom:5px;font-size:12px}
+  .bar{height:7px;border-radius:999px;background:var(--line);overflow:hidden;margin:8px 0 4px}
+  .bar > span{display:block;height:100%;background:linear-gradient(90deg,var(--brand-2),var(--brand),var(--accent))}
+  .gs-row{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--muted)}
+  .gs-row:last-child{border-bottom:0}
+  .gs-row b{font-weight:800;color:var(--text);white-space:nowrap}
   .del-x{position:absolute;top:7px;right:8px;color:var(--muted-2);cursor:pointer;font-size:15px;opacity:0}
   .lead:hover .del-x{opacity:1}
   .del-x:hover{color:var(--accent)}
@@ -151,7 +159,7 @@
 <div id="app">
   <header class="top">
     <div class="wrap top-inner">
-      <div class="logo"><span class="mark">⚡</span> Rank<span class="grad-text">Rebels</span></div>
+      <a class="logo" href="/" title="Back to the public site"><span class="mark">⚡</span> Rank<span class="grad-text">Rebels</span></a>
       <div class="who"><span id="who-email"></span><button class="btn btn-ghost btn-sm" onclick="signOut()">Sign out</button></div>
     </div>
   </header>
@@ -159,7 +167,7 @@
     <div class="tab on" data-tab="pipeline" onclick="setTab('pipeline')">Pipeline</div>
     <div class="tab" data-tab="customers" onclick="setTab('customers')">Customers</div>
     <div class="tab" data-tab="money" onclick="setTab('money')">Money</div>
-    <div class="tab" data-tab="warroom" onclick="setTab('warroom')">War Room</div>
+    <div class="tab" data-tab="goals" onclick="setTab('goals')">Goals</div>
   </div>
 
   <!-- PIPELINE -->
@@ -211,16 +219,29 @@
     </div>
   </div>
 
-  <!-- WAR ROOM -->
-  <div class="view wrap hidden" id="view-warroom">
-    <div class="row-between">
-      <div><h2>War Room</h2><p class="sub">Project revenue from the pipeline. Edit onboarding fee &amp; monthly sub to model scenarios — nothing here is saved.</p></div>
-      <button class="btn btn-ghost btn-sm" onclick="addProjRow()">+ Add scenario deal</button>
-    </div>
-    <div class="stats" id="proj-stats"></div>
+  <!-- GOALS -->
+  <div class="view wrap hidden" id="view-goals">
+    <div class="row-between"><div><h2>Goals &amp; Projections</h2><p class="sub">Model growth, see what it takes to hit your number, and project each partner's take-home. Assumptions are shared with the team.</p></div></div>
+    <div class="stats" id="goal-stats"></div>
+
     <div class="panel">
-      <div class="panel-h">Scenario deals</div>
-      <table id="proj-tbl"></table>
+      <div class="panel-h">Assumptions <span style="font-weight:500;font-size:12.5px;color:var(--muted)">edit to model — saved for the team</span></div>
+      <div class="assume" id="assumptions"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h">What it takes to hit your goal</div>
+      <div id="goalseek" style="padding:6px 18px 14px"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h">Month-by-month projection</div>
+      <div style="overflow-x:auto"><table id="proj-table"></table></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h">Unit economics</div>
+      <table id="unit-econ"></table>
     </div>
   </div>
 </div>
@@ -343,7 +364,7 @@ async function loadAll(){
   if(s.data){ settings = s.data; }
   renderAll();
 }
-function renderAll(){ renderBoard(); renderCustomers(); renderMoney(); renderWarRoom(); }
+function renderAll(){ renderBoard(); renderCustomers(); renderMoney(); renderGoals(); }
 
 /* ===== tabs ===== */
 function setTab(t){
@@ -351,7 +372,7 @@ function setTab(t){
     el('view-'+v).classList.toggle('hidden', v!==t);
   });
   document.querySelectorAll('.tab').forEach(function(x){ x.classList.toggle('on', x.dataset.tab===t); });
-  if(t==='warroom') seedProjRows();
+  if(t==='goals') renderGoals();
 }
 
 /* ===== PIPELINE (kanban) ===== */
@@ -552,7 +573,7 @@ async function saveSettings(){
   settings.brandon_floor=Number(el('set-floor').value)||0;
   settings.eric_pct=(Number(el('set-eric').value)||0)/100;
   await sb.from('rr_settings').update({brandon_floor:settings.brandon_floor, eric_pct:settings.eric_pct}).eq('id',1);
-  renderMoney(); renderWarRoom();
+  renderMoney(); renderGoals();
 }
 
 /* expenses */
@@ -564,58 +585,105 @@ async function saveExpense(){
 }
 async function delExpense(id){ if(confirm('Delete expense?')){ await sb.from('rr_expenses').delete().eq('id',id); await loadAll(); } }
 
-/* ===== WAR ROOM ===== */
-function seedProjRows(){
-  if(projRows.length) { renderWarRoom(); return; }
-  projRows = clients.filter(function(c){return ['lead','contacted','accepted','in_build','finalized'].indexOf(c.stage)>=0;})
-    .map(function(c){ return {name:c.business_name, acq:c.acquired_by, onboard:Number(c.onboarding_fee||0), monthly:Number(c.monthly_charge||0), include:true}; });
-  renderWarRoom();
-}
-function addProjRow(){ projRows.push({name:'New scenario deal', acq:'brandon', onboard:1500, monthly:300, include:true}); renderWarRoom(); }
-function renderWarRoom(){
-  var rows='';
-  projRows.forEach(function(r,i){
-    rows+='<tr>'+
-      '<td><input value="'+esc(r.name)+'" oninput="projEdit('+i+',\'name\',this.value)"></td>'+
-      '<td><select onchange="projEdit('+i+',\'acq\',this.value)"><option value="brandon"'+(r.acq==='brandon'?' selected':'')+'>Brandon</option><option value="eric"'+(r.acq==='eric'?' selected':'')+'>Eric</option></select></td>'+
-      '<td class="num"><input class="mini" type="number" value="'+r.onboard+'" oninput="projEdit('+i+',\'onboard\',this.value)"></td>'+
-      '<td class="num"><input class="mini" type="number" value="'+r.monthly+'" oninput="projEdit('+i+',\'monthly\',this.value)"></td>'+
-      '<td class="num"><input type="checkbox" '+(r.include?'checked':'')+' onchange="projEdit('+i+',\'include\',this.checked)" style="width:auto"></td>'+
-      '<td class="num"><span class="reveal" onclick="projDel('+i+')">remove</span></td>'+
-    '</tr>';
-  });
-  if(!projRows.length) rows='<tr><td colspan="6" class="empty">Open this tab to load pipeline deals, or add a scenario deal.</td></tr>';
-  el('proj-tbl').innerHTML='<thead><tr><th>Deal</th><th>Acquired by</th><th class="num">Onboarding</th><th class="num">Monthly</th><th class="num">Include</th><th></th></tr></thead><tbody>'+rows+'</tbody>';
+/* ===== GOALS / PROJECTIONS (CFO board) ===== */
+var GOAL_DEFAULTS = {targetMrr:25000, newPerMonth:3, avgOnboard:2500, avgMonthly:300, churnPct:2, months:12, ericSharePct:50};
+var GOAL_FIELDS = [
+  ['targetMrr','Target MRR ($)'], ['newPerMonth','New customers / mo'],
+  ['avgOnboard','Avg onboarding ($)'], ['avgMonthly','Avg monthly ($)'],
+  ['churnPct','Monthly churn (%)'], ['months','Projection (months)'],
+  ['ericSharePct','% new deals Eric brings']
+];
+function goals(){ return Object.assign({}, GOAL_DEFAULTS, settings.goals||{}); }
+function curMrr(){ return clients.filter(function(c){return c.stage==='published';}).reduce(function(a,c){return a+Number(c.monthly_charge||0);},0); }
 
-  var inc=projRows.filter(function(r){return r.include;});
-  var onboard=inc.reduce(function(a,r){return a+Number(r.onboard||0);},0);
-  var mrr=inc.reduce(function(a,r){return a+Number(r.monthly||0);},0);
-  var combined=onboard+mrr;
-  var combinedEric=inc.filter(function(r){return r.acq==='eric';}).reduce(function(a,r){return a+Number(r.onboard||0)+Number(r.monthly||0);},0);
-  var floor=Number(settings.brandon_floor)||0, pct=Number(settings.eric_pct)||0;
-  var above=Math.max(0,combined-floor); var ericPay=pct*(combined>0?(above*combinedEric/combined):0); var brandonPay=combined-ericPay;
-  el('proj-stats').innerHTML=
-    statCard('Projected onboarding', money(onboard), inc.length+' deals (one-time)')+
-    statCard('Projected new MRR', money(mrr), money(mrr*12)+' ARR')+
-    statCard('→ Brandon (onb + 1st mo)', money(brandonPay), 'floor applied to total')+
-    statCard('→ Eric (onb + 1st mo)', money(ericPay), 'after $'+floor+' floor');
+function renderGoals(){
+  var g=goals();
+  el('assumptions').innerHTML = GOAL_FIELDS.map(function(f){
+    return '<div class="f"><label>'+f[1]+'</label><input type="number" min="0" id="g-'+f[0]+'" value="'+g[f[0]]+'" oninput="onGoalInput()"></div>';
+  }).join('');
+  renderGoalsCalc();
 }
-function projEdit(i,k,v){ if(k==='onboard'||k==='monthly') v=Number(v)||0; projRows[i][k]=v; if(k!=='name') renderWarRoom(); else { /* name: light update */ var inc=true; } updateProjStatsOnly(); }
-function updateProjStatsOnly(){ /* recalc stats without re-rendering inputs (keeps focus) */
-  var inc=projRows.filter(function(r){return r.include;});
-  var onboard=inc.reduce(function(a,r){return a+Number(r.onboard||0);},0);
-  var mrr=inc.reduce(function(a,r){return a+Number(r.monthly||0);},0);
-  var combined=onboard+mrr;
-  var combinedEric=inc.filter(function(r){return r.acq==='eric';}).reduce(function(a,r){return a+Number(r.onboard||0)+Number(r.monthly||0);},0);
-  var floor=Number(settings.brandon_floor)||0, pct=Number(settings.eric_pct)||0;
-  var above=Math.max(0,combined-floor); var ericPay=pct*(combined>0?(above*combinedEric/combined):0); var brandonPay=combined-ericPay;
-  el('proj-stats').innerHTML=
-    statCard('Projected onboarding', money(onboard), inc.length+' deals (one-time)')+
-    statCard('Projected new MRR', money(mrr), money(mrr*12)+' ARR')+
-    statCard('→ Brandon (onb + 1st mo)', money(brandonPay), 'floor applied to total')+
-    statCard('→ Eric (onb + 1st mo)', money(ericPay), 'after $'+floor+' floor');
+function renderGoalsCalc(){
+  var g=goals();
+  var proj=projection(g);
+  var last=proj[proj.length-1]||{mrr:curMrr(),active:live_count()};
+  var cur=curMrr();
+  var pct=g.targetMrr>0?Math.min(100,Math.round(cur/g.targetMrr*100)):0;
+
+  el('goal-stats').innerHTML=
+    '<div class="stat"><div class="lbl">Current MRR</div><div class="val">'+money(cur)+'</div>'+
+      '<div class="bar"><span style="width:'+pct+'%"></span></div><div class="sub2">'+pct+'% of '+money(g.targetMrr)+' goal</div></div>'+
+    statCard('Projected MRR', money(last.mrr), 'month '+g.months)+
+    statCard('Projected ARR', money(last.mrr*12), 'run-rate at month '+g.months)+
+    statCard('Projected customers', Math.round(last.active), 'from '+live_count()+' today');
+
+  var needCusts = g.avgMonthly>0 ? Math.ceil(g.targetMrr/g.avgMonthly) : 0;
+  var gapCusts = Math.max(0, needCusts - live_count());
+  var mtg = monthsToReach(g, g.targetMrr);
+  el('goalseek').innerHTML=
+    '<div class="gs-row"><span>Customers needed at '+money(g.avgMonthly)+'/mo each to hit '+money(g.targetMrr)+' MRR</span><b>'+needCusts+'</b></div>'+
+    '<div class="gs-row"><span>More live customers to add from today ('+live_count()+' now)</span><b>+'+gapCusts+'</b></div>'+
+    '<div class="gs-row"><span>At '+g.newPerMonth+' new/mo &amp; '+g.churnPct+'% churn, you reach '+money(g.targetMrr)+' MRR in</span><b>'+(mtg<0?'> 5 yrs at these inputs':(mtg===0?'already there 🎉':mtg+' months'))+'</b></div>'+
+    '<div class="gs-row"><span>Cumulative revenue over the next '+g.months+' months</span><b>'+money(last.cum||0)+'</b></div>';
+
+  var rows=proj.map(function(r){
+    return '<tr><td>Mo '+r.m+'</td><td class="num">'+r.newC+'</td><td class="num">'+Math.round(r.active)+'</td><td class="num">'+money(r.mrr)+'</td><td class="num">'+money(r.onb)+'</td><td class="num">'+money(r.total)+'</td><td class="num">'+money(r.brandon)+'</td><td class="num">'+money(r.eric)+'</td><td class="num">'+money(r.cum)+'</td></tr>';
+  }).join('');
+  el('proj-table').innerHTML='<thead><tr><th>Month</th><th class="num">New</th><th class="num">Active</th><th class="num">MRR</th><th class="num">Onboarding</th><th class="num">Revenue</th><th class="num">→ Brandon</th><th class="num">→ Eric</th><th class="num">Cumulative</th></tr></thead><tbody>'+rows+'</tbody>';
+
+  var lifetime = g.churnPct>0 ? (100/g.churnPct) : 0;
+  var ltv = g.avgOnboard + g.avgMonthly*lifetime;
+  el('unit-econ').innerHTML='<tbody>'+
+    ue('Avg revenue per customer (monthly)', money(g.avgMonthly))+
+    ue('Avg onboarding (one-time)', money(g.avgOnboard))+
+    ue('Avg customer lifetime', (lifetime?Math.round(lifetime)+' months':'—')+' (at '+g.churnPct+'% monthly churn)')+
+    ue('Lifetime value per customer (LTV)', money(ltv))+
+    ue('First-year value per customer', money(g.avgOnboard + g.avgMonthly*12))+
+    ue('Current ARR (run-rate)', money(cur*12))+
+    '</tbody>';
 }
-function projDel(i){ projRows.splice(i,1); renderWarRoom(); }
+function ue(l,v){ return '<tr><td>'+l+'</td><td class="num">'+v+'</td></tr>'; }
+
+function projection(g){
+  var floor=Number(settings.brandon_floor)||0, pct=Number(settings.eric_pct)||0;
+  var cf=(Number(g.churnPct)||0)/100, eShare=(Number(g.ericSharePct)||0)/100;
+  var npm=Number(g.newPerMonth)||0, onb=Number(g.avgOnboard)||0, mo=Number(g.avgMonthly)||0;
+  var months=Math.max(1,Math.min(60,Number(g.months)||12));
+  var live=clients.filter(function(c){return c.stage==='published';});
+  function s(who,field){ return live.filter(function(c){return c.acquired_by===who;}).reduce(function(a,c){return a+Number(c[field]||0);},0); }
+  var mrrB=s('brandon','monthly_charge'), mrrE=s('eric','monthly_charge');
+  var actB=live.filter(function(c){return c.acquired_by==='brandon';}).length;
+  var actE=live.filter(function(c){return c.acquired_by==='eric';}).length;
+  var cum=0, out=[];
+  for(var m=1;m<=months;m++){
+    var newE=npm*eShare, newB=npm-newE;
+    mrrB=mrrB*(1-cf)+newB*mo; mrrE=mrrE*(1-cf)+newE*mo;
+    actB=actB*(1-cf)+newB; actE=actE*(1-cf)+newE;
+    var onbB=newB*onb, onbE=newE*onb;
+    var revB=mrrB+onbB, revE=mrrE+onbE, total=revB+revE;
+    var above=Math.max(0,total-floor);
+    var ericPay=pct*(total>0?above*revE/total:0);
+    cum+=total;
+    out.push({m:m,newC:npm,active:actB+actE,mrr:mrrB+mrrE,onb:onbB+onbE,total:total,brandon:total-ericPay,eric:ericPay,cum:cum});
+  }
+  return out;
+}
+function monthsToReach(g, target){
+  var cf=(Number(g.churnPct)||0)/100, npm=Number(g.newPerMonth)||0, mo=Number(g.avgMonthly)||0;
+  var mrr=curMrr();
+  if(mrr>=target) return 0;
+  if(npm*mo<=0) return -1;
+  for(var m=1;m<=60;m++){ mrr=mrr*(1-cf)+npm*mo; if(mrr>=target) return m; }
+  return -1;
+}
+var goalTimer=null;
+function onGoalInput(){
+  var g={}; GOAL_FIELDS.forEach(function(f){ g[f[0]]=Number(el('g-'+f[0]).value)||0; });
+  settings.goals=g;
+  renderGoalsCalc();
+  clearTimeout(goalTimer); goalTimer=setTimeout(saveGoals,700);
+}
+async function saveGoals(){ await sb.from('rr_settings').update({goals:settings.goals}).eq('id',1); }
 
 boot();
 </script>
