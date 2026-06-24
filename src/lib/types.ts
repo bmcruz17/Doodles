@@ -223,6 +223,53 @@ export type SitterProfile = {
   updated_at: string
 }
 
+export type CreatorProfile = {
+  id: string
+  user_id: string
+  handle: string
+  bio: string
+  niche: string | null
+  breeds: string[]
+  instagram: string | null
+  tiktok: string | null
+  youtube: string | null
+  follower_count: number
+  rate_per_post: number | null
+  status: 'active' | 'paused'
+  verified: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type Campaign = {
+  id: string
+  vendor_id: string
+  vendor_name: string
+  title: string
+  brief: string
+  payout_per_post: number
+  budget: number | null
+  target_breed: string | null
+  target_life_stage: LifeStage | null
+  status: 'open' | 'closed'
+  created_at: string
+  updated_at: string
+}
+
+export type DealStatus = 'applied' | 'accepted' | 'delivered' | 'paid' | 'declined'
+
+export type CampaignDeal = {
+  id: string
+  campaign_id: string
+  creator_id: string
+  creator_handle: string
+  status: DealStatus
+  payout: number
+  commission: number
+  created_at: string
+  updated_at: string
+}
+
 export type FriendshipStatus = 'pending' | 'accepted'
 
 export type Friendship = {
@@ -409,6 +456,24 @@ export type Database = {
           addressee_id: string
         }
         Update: Partial<Friendship>
+        Relationships: []
+      }
+      creator_profiles: {
+        Row: CreatorProfile
+        Insert: Partial<CreatorProfile> & { user_id: string }
+        Update: Partial<CreatorProfile>
+        Relationships: []
+      }
+      campaigns: {
+        Row: Campaign
+        Insert: Partial<Campaign> & { vendor_id: string; title: string }
+        Update: Partial<Campaign>
+        Relationships: []
+      }
+      campaign_deals: {
+        Row: CampaignDeal
+        Insert: Partial<CampaignDeal> & { campaign_id: string; creator_id: string }
+        Update: Partial<CampaignDeal>
         Relationships: []
       }
     }

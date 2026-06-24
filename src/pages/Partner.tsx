@@ -4,7 +4,14 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { uploadPostPhoto } from '../lib/posts'
 import { LIFE_STAGES } from '../lib/dog'
-import type { LifeStage, Service, Vendor, VendorCategory } from '../lib/types'
+import type {
+  Campaign,
+  CampaignDeal,
+  LifeStage,
+  Service,
+  Vendor,
+  VendorCategory,
+} from '../lib/types'
 
 // Self-serve provider listing. Local providers list FREE — they create a
 // vendor profile + services, which go live in the marketplace after review.
@@ -196,6 +203,8 @@ export default function Partner() {
       {!loading && existing.length > 0 && (
         <PromoteInFeed userId={user?.id ?? ''} vendors={existing} />
       )}
+
+      {!loading && existing.length > 0 && <CampaignsManager vendors={existing} />}
 
       <form onSubmit={submit} className="card space-y-4">
         <h2 className="text-lg font-semibold text-brand-900">Add a listing</h2>
@@ -465,6 +474,155 @@ function PromoteInFeed({
             {busy ? 'Posting…' : 'Post to feed'}
           </button>
         </form>
+      )}
+    </section>
+  )
+}
+
+// --------------------------------------------------------------------------
+// Vendor campaigns: post a brief, review creator applicants, broker the deal.
+// --------------------------------------------------------------------------
+function CampaignsManager({ vendors }: { vendors: (Vendor & { services: Service[] })[] }) {
+  const [open, setOpen] = useState(false)
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [deals, setDeals] = useState<CampaignDeal[]>([])
+  const [vendorId, setVendorId] = useState(vendors[0]?.id ?? '')
+  const [title, setTitle] = useState('')
+  const [brief, setBrief] = useState('')
+  const [payout, setPayout] = useState('')
+  const [breed, setBreed] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  async function load() {
+    const ids = vendors.map((v) => v.id)
+    const { data: camps } = await supabase
+      .from('campaigns')
+      .select('*')
+      .in('vendor_id', ids)
+      .order('created_at', { ascending: false })
+    setCampaigns(camps ?? [])
+    const campIds = (camps ?? []).map((c) => c.id)
+    if (campIds.length) {
+      const { data: ds } = await supabase
+        .from('campaign_deals')
+        .select('*')
+        .in('campaign_id', campIds)
+      setDeals(ds ?? [])
+    } else {
+      setDeals([])
+    }
+  }
+
+  useEffect(() => {
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function create(e: React.FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    try {
+      const vendor = vendors.find((v) => v.id === vendorId)
+      await supabase.from('campaigns').insert({
+        vendor_id: vendorId,
+        vendor_name: vendor?.name ?? '',
+        title: title.trim(),
+        brief: brief.trim(),
+        payout_per_post: Number(payout) || 0,
+        target_breed: breed.trim() || null,
+        status: 'open',
+      })
+      setTitle('')
+      setBrief('')
+      setPayout('')
+      setBreed('')
+      setOpen(false)
+      load()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function setDeal(id: string, status: CampaignDeal['status']) {
+    await supabase.from('campaign_deals').update({ status }).eq('id', id)
+    load()
+  }
+
+  return (
+    <section className="card border-sky-200 bg-sky-50/60">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">
+            Influencer marketing
+          </p>
+          <h2 className="text-lg font-semibold text-brand-900">Creator campaigns</h2>
+          <p className="mt-1 text-sm text-brand-600">
+            Post a brief and pay PackHub creators to make content about your brand.
+          </p>
+        </div>
+        <button onClick={() => setOpen((o) => !o)} className="btn-ghost text-sm">
+          {open ? 'Close' : 'New campaign'}
+        </button>
+      </div>
+
+      {open && (
+        <form onSubmit={create} className="mt-4 space-y-3">
+          {vendors.length > 1 && (
+            <select className="input" value={vendorId} onChange={(e) => setVendorId(e.target.value)}>
+              {vendors.map((v) => (
+                <option key={v.id} value={v.id}>{v.name}</option>
+              ))}
+            </select>
+          )}
+          <input className="input" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Campaign title — e.g. Summer treat launch" />
+          <textarea className="input min-h-[60px]" value={brief} onChange={(e) => setBrief(e.target.value)} placeholder="What you want creators to make." />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <input className="input" inputMode="decimal" value={payout} onChange={(e) => setPayout(e.target.value)} placeholder="Payout per post ($)" />
+            <input className="input" value={breed} onChange={(e) => setBreed(e.target.value)} placeholder="Target breed (optional)" />
+          </div>
+          <button type="submit" disabled={busy} className="btn-primary">
+            {busy ? 'Posting…' : 'Post campaign'}
+          </button>
+        </form>
+      )}
+
+      {campaigns.length > 0 && (
+        <div className="mt-4 space-y-3">
+          {campaigns.map((c) => {
+            const applicants = deals.filter((d) => d.campaign_id === c.id)
+            return (
+              <div key={c.id} className="rounded-xl border border-brand-200 bg-white p-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-brand-900">{c.title}</h3>
+                  <span className="text-xs text-brand-500">${Number(c.payout_per_post).toFixed(0)}/post</span>
+                </div>
+                {applicants.length === 0 ? (
+                  <p className="mt-1 text-xs text-brand-500">No applicants yet.</p>
+                ) : (
+                  <ul className="mt-2 space-y-1.5">
+                    {applicants.map((d) => (
+                      <li key={d.id} className="flex items-center justify-between gap-2 text-sm">
+                        <span className="text-brand-800">@{d.creator_handle}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs capitalize text-brand-600">{d.status}</span>
+                          {d.status === 'applied' && (
+                            <>
+                              <button onClick={() => setDeal(d.id, 'accepted')} className="rounded-md bg-sky-600 px-2 py-1 text-xs text-white">Accept</button>
+                              <button onClick={() => setDeal(d.id, 'declined')} className="rounded-md border border-brand-200 px-2 py-1 text-xs text-brand-600">Decline</button>
+                            </>
+                          )}
+                          {d.status === 'delivered' && (
+                            <button onClick={() => setDeal(d.id, 'paid')} className="rounded-md bg-emerald-600 px-2 py-1 text-xs text-white">Mark paid</button>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )
+          })}
+        </div>
       )}
     </section>
   )

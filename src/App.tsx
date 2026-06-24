@@ -19,6 +19,7 @@ import Feed from './pages/Feed'
 import Sitters from './pages/Sitters'
 import Friends from './pages/Friends'
 import Admin from './pages/Admin'
+import Creator from './pages/Creator'
 
 export default function App() {
   const { loading } = useAuth()
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="/feed" element={<Feed />} />
         <Route path="/friends" element={<Friends />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/creator" element={<Creator />} />
         <Route path="/pets/new" element={<CreatePetChat />} />
         <Route path="/pets/new/form" element={<CreatePet />} />
         <Route path="/pets/:petId" element={<PetDetail />} />

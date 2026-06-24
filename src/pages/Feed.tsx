@@ -118,9 +118,14 @@ export default function Feed() {
             Live shots from dogs around the community. Share yours.
           </p>
         </div>
-        <Link to="/friends" className="btn-ghost shrink-0 text-sm">
-          Friends
-        </Link>
+        <div className="flex shrink-0 gap-2">
+          <Link to="/creator" className="btn-ghost text-sm">
+            Creator
+          </Link>
+          <Link to="/friends" className="btn-ghost text-sm">
+            Friends
+          </Link>
+        </div>
       </div>
 
       <Composer
