@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import type { Sex } from '../lib/types'
+import type { Json, Sex } from '../lib/types'
 
 // --------------------------------------------------------------------------
 // Parsing helpers (client-side — no LLM needed for the guided interview)
@@ -25,18 +25,15 @@ function parseWeight(s: string): number | null {
   return m ? Number(m[1]) : null
 }
 
-// Accepts a date (MM/DD/YYYY, YYYY-MM-DD, bare digits) OR an age ("3 years",
-// "6 months", "2 yo"), returning an ISO date or null.
+// Accepts a date OR an age ("3 years", "6 months"), returns ISO date or null.
 function parseBirthish(input: string): string | null {
   const s = input.trim()
   if (!s || isSkip(s)) return null
-
   const iso = (y: string, mo: string, d: string) => {
     const mn = Number(mo), dn = Number(d)
     if (mn < 1 || mn > 12 || dn < 1 || dn > 31) return null
     return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
   }
-
   let m = s.match(/^(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})$/)
   if (m) return iso(m[1], m[2], m[3])
   m = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})$/)
@@ -44,17 +41,15 @@ function parseBirthish(input: string): string | null {
   const digits = s.replace(/\D/g, '')
   if (/^\d{8}$/.test(digits))
     return iso(digits.slice(4), digits.slice(0, 2), digits.slice(2, 4))
-
-  // Age → approximate birthdate from today.
   const yrs = s.match(/(\d+)\s*(years?|yrs?|yo|y)\b/i)
   const mos = s.match(/(\d+)\s*(months?|mos?|mo)\b/i)
   if (yrs || mos) {
     const now = new Date()
-    let totalMonths = (yrs ? Number(yrs[1]) * 12 : 0) + (mos ? Number(mos[1]) : 0)
-    if (totalMonths > 0) {
-      const d = new Date(now.getFullYear(), now.getMonth() - totalMonths, now.getDate())
-      return d.toISOString().slice(0, 10)
-    }
+    const totalMonths = (yrs ? Number(yrs[1]) * 12 : 0) + (mos ? Number(mos[1]) : 0)
+    if (totalMonths > 0)
+      return new Date(now.getFullYear(), now.getMonth() - totalMonths, now.getDate())
+        .toISOString()
+        .slice(0, 10)
   }
   return null
 }
@@ -62,6 +57,8 @@ function parseBirthish(input: string): string | null {
 // --------------------------------------------------------------------------
 // Interview script
 // --------------------------------------------------------------------------
+type Chip = 'yes' | 'no' | 'unknown'
+
 type Answers = {
   name: string
   breed: string | null
@@ -69,20 +66,43 @@ type Answers = {
   birthdate: string | null
   weight_lbs: number | null
   coat_type: string | null
+  source: string | null // where they got the dog
+  acquired: string | null // when it joined the family
+  wellbeing: string | null // general health / energy
+  medical_history: string | null
+  microchipped: Chip
+  microchip_number: string | null
   notes: string | null
 }
 
+function parseChip(raw: string, a: Answers) {
+  const t = raw.toLowerCase()
+  const num = raw.match(/\d[\d\s-]{7,}\d/)
+  if (num) {
+    a.microchipped = 'yes'
+    a.microchip_number = num[0].replace(/\D/g, '')
+    return
+  }
+  if (/not chipped|no chip|isn'?t chipped|^no\b|nope|none/.test(t)) {
+    a.microchipped = 'no'
+    return
+  }
+  if (/\b(yes|yeah|yep|chipped|microchipped)\b/.test(t)) {
+    a.microchipped = 'yes'
+    return
+  }
+  a.microchipped = 'unknown'
+}
+
 type Step = {
-  key: keyof Answers
-  required?: boolean
   prompt: (a: Partial<Answers>) => string
   store: (raw: string, a: Answers) => void
+  required?: boolean
   ack?: (a: Answers) => string
 }
 
 const STEPS: Step[] = [
   {
-    key: 'name',
     required: true,
     prompt: () =>
       "Hi! I'm your PackHub companion 🐾 Let's build your dog's profile together. First — what's their name?",
@@ -90,36 +110,52 @@ const STEPS: Step[] = [
     ack: (a) => `Love it — nice to meet ${a.name}!`,
   },
   {
-    key: 'breed',
-    prompt: (a) => `What breed or mix is ${a.name}? (You can say "not sure.")`,
+    prompt: (a) => `What breed or mix is ${a.name}? ("not sure" is fine.)`,
     store: (raw, a) => (a.breed = isSkip(raw) ? null : raw.trim()),
   },
   {
-    key: 'sex',
     prompt: (a) => `Is ${a.name} a boy or a girl?`,
     store: (raw, a) => (a.sex = parseSex(raw)),
   },
   {
-    key: 'birthdate',
     prompt: (a) =>
-      `Roughly when was ${a.name} born? A date like 03/14/2021, or an age like "3 years" — or "skip".`,
+      `Roughly when was ${a.name} born? A date like 03/14/2021, an age like "3 years", or "skip".`,
     store: (raw, a) => (a.birthdate = parseBirthish(raw)),
   },
   {
-    key: 'weight_lbs',
     prompt: (a) => `About how much does ${a.name} weigh, in pounds?`,
     store: (raw, a) => (a.weight_lbs = parseWeight(raw)),
   },
   {
-    key: 'coat_type',
-    prompt: (a) =>
-      `How would you describe ${a.name}'s coat? (short, curly, double… or "skip")`,
+    prompt: (a) => `How would you describe ${a.name}'s coat? (short, curly, double… or "skip")`,
     store: (raw, a) => (a.coat_type = isSkip(raw) ? null : raw.trim()),
   },
   {
-    key: 'notes',
     prompt: (a) =>
-      `Last one — anything else I should know about ${a.name}? Allergies, quirks, health notes — or "nope".`,
+      `Where did you get ${a.name}? (a breeder, a shelter or rescue, a friend, found them…)`,
+    store: (raw, a) => (a.source = isSkip(raw) ? null : raw.trim()),
+  },
+  {
+    prompt: (a) => `And when did ${a.name} join your family? (a year is fine, or "skip")`,
+    store: (raw, a) => (a.acquired = isSkip(raw) ? null : raw.trim()),
+  },
+  {
+    prompt: (a) =>
+      `How's ${a.name}'s general health and energy these days? Anything you've noticed lately?`,
+    store: (raw, a) => (a.wellbeing = isSkip(raw) ? null : raw.trim()),
+  },
+  {
+    prompt: (a) =>
+      `Any known medical history for ${a.name} — conditions, surgeries, medications, or allergies? ("none" is okay.)`,
+    store: (raw, a) => (a.medical_history = isSkip(raw) ? null : raw.trim()),
+  },
+  {
+    prompt: (a) =>
+      `Is ${a.name} microchipped? If you have the number handy, say or type it — otherwise "not chipped" or "not sure".`,
+    store: parseChip,
+  },
+  {
+    prompt: (a) => `Last one — anything else I should know about ${a.name}?`,
     store: (raw, a) => (a.notes = isSkip(raw) ? null : raw.trim()),
   },
 ]
@@ -129,7 +165,6 @@ interface Bubble {
   text: string
 }
 
-// Browser speech recognition (Chrome/Edge; degrades gracefully elsewhere).
 const SpeechRecognition: any =
   typeof window !== 'undefined'
     ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
@@ -145,6 +180,12 @@ export default function CreatePetChat() {
     birthdate: null,
     weight_lbs: null,
     coat_type: null,
+    source: null,
+    acquired: null,
+    wellbeing: null,
+    medical_history: null,
+    microchipped: 'unknown',
+    microchip_number: null,
     notes: null,
   })
   const [messages, setMessages] = useState<Bubble[]>([])
@@ -166,7 +207,6 @@ export default function CreatePetChat() {
     }
   }
 
-  // Kick off with the first question.
   useEffect(() => {
     say(STEPS[0].prompt(answers.current))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -185,10 +225,6 @@ export default function CreatePetChat() {
     setMessages((m) => [...m, { from: 'user', text }])
 
     const step = STEPS[stepIndex]
-    if (step.required && !text) {
-      say(step.prompt(answers.current))
-      return
-    }
     step.store(text, answers.current)
 
     const ack = step.ack?.(answers.current)
@@ -200,7 +236,7 @@ export default function CreatePetChat() {
     } else {
       setPhase('confirm')
       say(
-        `${ack ? ack + ' ' : ''}That's everything I need. Here's ${answers.current.name}'s profile — want me to save it?`,
+        `${ack ? ack + ' ' : ''}That's everything — here's ${answers.current.name}'s profile. Want me to save it?`,
       )
     }
   }
@@ -232,6 +268,15 @@ export default function CreatePetChat() {
     setError(null)
     try {
       const a = answers.current
+      const ai_profile: Json = {
+        source: a.source,
+        acquired: a.acquired,
+        wellbeing: a.wellbeing,
+        medical_history: a.medical_history,
+        microchip: { status: a.microchipped, number: a.microchip_number },
+        intake_at: new Date().toISOString(),
+      }
+
       const { data, error: insertError } = await supabase
         .from('pets')
         .insert({
@@ -244,10 +289,22 @@ export default function CreatePetChat() {
           sex: a.sex,
           photo_url: null,
           notes: a.notes,
+          ai_profile,
         })
         .select()
         .single()
       if (insertError) throw insertError
+
+      // Seed the health vault with any medical history they shared at intake.
+      if (a.medical_history) {
+        await supabase.from('health_records').insert({
+          pet_id: data.id,
+          record_type: 'note',
+          data: { title: 'Known history (from intake)', notes: a.medical_history },
+          document_url: null,
+        })
+      }
+
       navigate(`/pets/${data.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create profile')
@@ -257,6 +314,14 @@ export default function CreatePetChat() {
   }
 
   const a = answers.current
+  const chipText =
+    a.microchipped === 'yes'
+      ? a.microchip_number
+        ? `Yes · ${a.microchip_number}`
+        : 'Yes'
+      : a.microchipped === 'no'
+        ? 'Not chipped'
+        : 'Unknown'
   const summary: [string, string][] = [
     ['Name', a.name || '—'],
     ['Breed', a.breed || '—'],
@@ -264,6 +329,9 @@ export default function CreatePetChat() {
     ['Birthday', a.birthdate || 'not set'],
     ['Weight', a.weight_lbs ? `${a.weight_lbs} lbs` : '—'],
     ['Coat', a.coat_type || '—'],
+    ['From', a.source || '—'],
+    ['Joined', a.acquired || '—'],
+    ['Microchip', chipText],
   ]
 
   return (
@@ -278,11 +346,7 @@ export default function CreatePetChat() {
           </p>
         </div>
         {'speechSynthesis' in window && (
-          <button
-            onClick={() => setSpeak((s) => !s)}
-            className="btn-ghost text-sm"
-            title="Read questions aloud"
-          >
+          <button onClick={() => setSpeak((s) => !s)} className="btn-ghost text-sm">
             {speak ? 'Voice on' : 'Voice off'}
           </button>
         )}
@@ -293,9 +357,7 @@ export default function CreatePetChat() {
           <div key={i} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
               className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm ${
-                m.from === 'user'
-                  ? 'bg-sky-600 text-white'
-                  : 'bg-brand-100 text-brand-900'
+                m.from === 'user' ? 'bg-sky-600 text-white' : 'bg-brand-100 text-brand-900'
               }`}
             >
               {m.text}
@@ -305,10 +367,8 @@ export default function CreatePetChat() {
 
         {phase === 'confirm' && (
           <div className="card">
-            <h3 className="mb-2 font-semibold text-brand-900">
-              {a.name}'s profile
-            </h3>
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-2">
+            <h3 className="mb-2 font-semibold text-brand-900">{a.name}'s profile</h3>
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
               {summary.map(([k, v]) => (
                 <div key={k}>
                   <dt className="text-xs uppercase tracking-wide text-brand-500">{k}</dt>
@@ -316,6 +376,16 @@ export default function CreatePetChat() {
                 </div>
               ))}
             </dl>
+            {a.wellbeing && (
+              <p className="mt-3 text-sm text-brand-700">
+                <span className="font-medium">Wellbeing:</span> {a.wellbeing}
+              </p>
+            )}
+            {a.medical_history && (
+              <p className="mt-1 text-sm text-brand-700">
+                <span className="font-medium">History:</span> {a.medical_history}
+              </p>
+            )}
             {a.notes && (
               <p className="mt-3 border-t border-brand-200 pt-3 text-sm text-brand-700">
                 {a.notes}
