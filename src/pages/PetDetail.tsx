@@ -239,7 +239,6 @@ export default function PetDetail() {
             <input
               type="file"
               accept="image/*,application/pdf"
-              capture="environment"
               className="hidden"
               onChange={onChipDoc}
               disabled={chipUploading}

@@ -181,7 +181,6 @@ function SmartUpload({
           <input
             type="file"
             accept="image/*,application/pdf"
-            capture="environment"
             className="hidden"
             onChange={onFile}
             disabled={busy}
