@@ -128,6 +128,13 @@ export interface AdminOverview {
     by_neuter: Record<string, number>
     top_breeds: [string, number][]
   }
+  wearables: {
+    devices: number
+    active: number
+    daily_rows: number
+    by_kind: Record<string, number>
+    list: { id: string; name: string; kind: string; provider: string; last_seen_at: string | null; created_at: string }[]
+  }
 }
 
 export interface DeviceInsights {
@@ -138,6 +145,21 @@ export interface DeviceInsights {
 /** Run the AI interpretation over a pet's recent wearable data. */
 export function deviceInsights(petId: string) {
   return invoke<DeviceInsights>('device-insights', { pet_id: petId })
+}
+
+export interface TractiveResult {
+  status: 'connected' | 'needs_connect'
+  synced?: number
+  message: string
+}
+
+/** Connect / sync a Tractive tracker for a pet. */
+export function tractiveSync(petId: string, email?: string, password?: string) {
+  return invoke<TractiveResult>('tractive-sync', {
+    pet_id: petId,
+    email,
+    password,
+  })
 }
 
 export function adminOverview() {

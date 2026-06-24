@@ -51,10 +51,14 @@ function buildSystemPrompt(pet: Record<string, unknown>, records: string): strin
     'conditions, temperament and training, exercise needs, and nutrition.',
     '',
     'You are speaking with the owner about THEIR specific dog. Ground every',
-    'answer in this dog\'s actual profile and records below. If breed is missing',
+    "answer in this dog's actual profile and records below. If breed is missing",
     'or unknown, give sound general guidance and note where breed would change',
     "your answer. If the records don't contain something you'd need, say so and",
     'ask a clarifying question.',
+    '',
+    'If wearable data is present below, proactively reference concrete trends',
+    "(e.g. Biscuit's scratching is up and activity is down this week) and tie",
+    'your advice to what the numbers show.',
     '',
     `IMPORTANT: ${DISCLAIMER}`,
     '',
@@ -111,6 +115,21 @@ Deno.serve(async (req) => {
       .order('administered_at', { ascending: false })
       .limit(20)
 
+    const { data: deviceDaily } = await userClient
+      .from('device_daily')
+      .select('*')
+      .eq('pet_id', pet_id)
+      .order('day', { ascending: false })
+      .limit(14)
+
+    const { data: deviceAlerts } = await userClient
+      .from('device_alerts')
+      .select('severity, title, detail')
+      .eq('pet_id', pet_id)
+      .eq('acknowledged', false)
+      .order('created_at', { ascending: false })
+      .limit(10)
+
     const recordsText = [
       ...(records ?? []).map(
         (r) =>
@@ -124,6 +143,28 @@ Deno.serve(async (req) => {
           (v.expires_at ? `, expires ${v.expires_at}` : ''),
       ),
     ].join('\n')
+
+    const wearableText =
+      deviceDaily && deviceDaily.length
+        ? [
+            '',
+            '--- WEARABLE: last 14 daily summaries (newest first) ---',
+            ...deviceDaily.map(
+              (d) =>
+                `- ${d.day}: steps ${d.steps ?? '-'}, HR ${d.avg_heart_rate ?? '-'}bpm, ` +
+                `resp ${d.avg_resp_rate ?? '-'}/min, sleep ${d.sleep_minutes ?? '-'}min, ` +
+                `scratch ${d.scratch_events ?? '-'}, limp ${d.limp_score ?? '-'}, ` +
+                `water ${d.water_ml ?? '-'}ml, food ${d.food_g ?? '-'}g, play ${d.play_minutes ?? '-'}min`,
+            ),
+            ...(deviceAlerts && deviceAlerts.length
+              ? [
+                  '',
+                  'Active AI health flags from the wearable:',
+                  ...deviceAlerts.map((a) => `- [${a.severity}] ${a.title}: ${a.detail}`),
+                ]
+              : []),
+          ].join('\n')
+        : ''
 
     // Service-role client for reading/writing the conversation history.
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
@@ -152,7 +193,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: ANTHROPIC_MODEL,
         max_tokens: 1024,
-        system: buildSystemPrompt(pet, recordsText),
+        system: buildSystemPrompt(pet, recordsText + wearableText),
         messages: [...recentTurns, { role: 'user', content: message }],
       }),
     })

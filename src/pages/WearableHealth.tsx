@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { generateSampleData } from '../lib/devices'
-import { deviceInsights } from '../lib/api'
+import { deviceInsights, tractiveSync } from '../lib/api'
 import type { Device, DeviceAlert, DeviceDaily, Pet } from '../lib/types'
 
 function avg(rows: DeviceDaily[], key: keyof DeviceDaily): number | null {
@@ -128,6 +128,11 @@ export default function WearableHealth() {
           <button onClick={connect} disabled={busy === 'connect'} className="btn-primary mt-3">
             {busy === 'connect' ? 'Pairing…' : 'Connect PackHub Band'}
           </button>
+          <div className="mt-4 border-t border-sky-200 pt-4">
+            <p className="text-sm font-medium text-brand-800">Already have a Tractive tracker?</p>
+            <p className="text-xs text-brand-600">Connect it to sync activity into PackHub now.</p>
+            <TractiveConnect petId={pet.id} onConnected={load} />
+          </div>
         </div>
       ) : (
         <>
@@ -210,6 +215,54 @@ export default function WearableHealth() {
         </>
       )}
     </div>
+  )
+}
+
+function TractiveConnect({ petId, onConnected }: { petId: string; onConnected: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    setMsg(null)
+    try {
+      const res = await tractiveSync(petId, email, password)
+      setMsg(res.message)
+      if (res.status === 'connected') {
+        setEmail('')
+        setPassword('')
+        onConnected()
+      }
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : 'Could not connect')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} className="btn-ghost mt-2 text-sm">
+        Connect Tractive
+      </button>
+    )
+  }
+  return (
+    <form onSubmit={submit} className="mt-2 space-y-2">
+      <input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Tractive email" />
+      <input className="input" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Tractive password" />
+      <p className="text-xs text-brand-400">
+        Used once to link your tracker; we store only the session token, never your password.
+      </p>
+      {msg && <p className="text-sm text-brand-600">{msg}</p>}
+      <button type="submit" disabled={busy} className="btn-primary text-sm">
+        {busy ? 'Connecting…' : 'Connect & sync'}
+      </button>
+    </form>
   )
 }
 

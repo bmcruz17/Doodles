@@ -5,7 +5,7 @@ import {
   type AdminOverview,
 } from '../lib/api'
 
-type Board = 'vendors' | 'bookings' | 'sitters' | 'audience'
+type Board = 'vendors' | 'bookings' | 'sitters' | 'audience' | 'wearables'
 
 function money(n: number): string {
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
@@ -84,7 +84,7 @@ export default function Admin() {
 
       {/* Board switcher */}
       <div className="flex gap-2">
-        {(['vendors', 'bookings', 'sitters', 'audience'] as Board[]).map((b) => (
+        {(['vendors', 'bookings', 'sitters', 'audience', 'wearables'] as Board[]).map((b) => (
           <button
             key={b}
             onClick={() => setBoard(b)}
@@ -167,6 +167,40 @@ export default function Admin() {
             </Card>
           ) }))}
         />
+      )}
+
+      {board === 'wearables' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Metric label="Devices" value={data.wearables.devices} />
+            <Metric label="Active (7d)" value={data.wearables.active} />
+            <Metric label="Daily records" value={data.wearables.daily_rows} accent />
+            <Metric label="Device types" value={Object.keys(data.wearables.by_kind).length} />
+          </div>
+          <div className="card border-sky-200 bg-sky-50/60">
+            <p className="text-sm text-brand-700">
+              Every device streaming vitals deepens the per-dog, per-breed data
+              asset — the same engine that powers AI health insights and ad targeting.
+            </p>
+          </div>
+          {data.wearables.list.length === 0 ? (
+            <p className="text-sm text-brand-500">No devices connected yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {data.wearables.list.map((d) => (
+                <div key={d.id} className="card flex items-center justify-between py-3">
+                  <div>
+                    <p className="text-sm font-medium text-brand-900">{d.name}</p>
+                    <p className="text-xs text-brand-500 capitalize">{d.kind.replace('_', ' ')} · {d.provider}</p>
+                  </div>
+                  <span className="text-xs text-brand-500">
+                    {d.last_seen_at ? `synced ${new Date(d.last_seen_at).toLocaleDateString()}` : 'never synced'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {board === 'audience' && (
