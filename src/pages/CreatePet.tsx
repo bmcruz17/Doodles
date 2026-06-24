@@ -186,7 +186,7 @@ export default function CreatePet() {
           </button>
           <button
             type="button"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
             className="btn-ghost"
           >
             Cancel

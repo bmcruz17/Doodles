@@ -55,7 +55,7 @@ export default function PetDetail() {
 
   return (
     <div>
-      <Link to="/" className="text-sm text-brand-300 hover:text-brand-100">
+      <Link to="/dashboard" className="text-sm text-brand-300 hover:text-brand-100">
         ← Back to dashboard
       </Link>
 
