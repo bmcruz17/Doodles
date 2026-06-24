@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import { uploadPetPhoto } from '../lib/photos'
+import { uploadPetPhoto, uploadPetFile } from '../lib/photos'
 import PetAvatar from '../components/PetAvatar'
-import type { Pet } from '../lib/types'
+import type { Json, Pet } from '../lib/types'
+
+// ZXing is heavy — only load it when the camera scanner is opened.
+const BarcodeScanner = lazy(() => import('../components/BarcodeScanner'))
 
 function ageFrom(birthdate: string | null): string | null {
   if (!birthdate) return null
@@ -25,6 +28,17 @@ export default function PetDetail() {
   const [pet, setPet] = useState<Pet | null>(null)
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [chip, setChip] = useState('')
+  const [savingChip, setSavingChip] = useState(false)
+  const [chipUploading, setChipUploading] = useState(false)
+  const [scanOpen, setScanOpen] = useState(false)
+  const [chipMsg, setChipMsg] = useState<string | null>(null)
+
+  function profileObj(p: Pet): Record<string, unknown> {
+    return p.ai_profile && typeof p.ai_profile === 'object' && !Array.isArray(p.ai_profile)
+      ? (p.ai_profile as Record<string, unknown>)
+      : {}
+  }
 
   async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -39,6 +53,47 @@ export default function PetDetail() {
     }
   }
 
+  async function saveChip() {
+    if (!pet) return
+    setSavingChip(true)
+    setChipMsg(null)
+    try {
+      const num = chip.trim()
+      const next = {
+        ...profileObj(pet),
+        microchip: { status: num ? 'yes' : 'unknown', number: num || null },
+      } as Json
+      await supabase.from('pets').update({ ai_profile: next }).eq('id', pet.id)
+      setPet({ ...pet, ai_profile: next })
+      setChipMsg('Saved.')
+    } catch (err) {
+      setChipMsg(err instanceof Error ? err.message : 'Could not save')
+    } finally {
+      setSavingChip(false)
+    }
+  }
+
+  async function onChipDoc(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !user || !pet) return
+    setChipUploading(true)
+    setChipMsg(null)
+    try {
+      const path = await uploadPetFile(user.id, pet.id, file)
+      await supabase.from('health_records').insert({
+        pet_id: pet.id,
+        record_type: 'note',
+        data: { title: 'Microchip paperwork', notes: 'Uploaded from the pet page.' },
+        document_url: path,
+      })
+      setChipMsg('Document saved to the health vault.')
+    } catch (err) {
+      setChipMsg(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setChipUploading(false)
+    }
+  }
+
   useEffect(() => {
     if (!petId) return
     let active = true
@@ -50,6 +105,8 @@ export default function PetDetail() {
       .then(({ data }) => {
         if (active) {
           setPet(data)
+          const num = (data && (profileObj(data).microchip as any))?.number
+          if (num) setChip(String(num))
           setLoading(false)
         }
       })
@@ -148,6 +205,70 @@ export default function PetDetail() {
           </Link>
         </div>
       </div>
+
+      {/* Microchip */}
+      <div className="card mt-5">
+        <h2 className="text-lg font-semibold text-brand-900">Microchip</h2>
+        <p className="mb-3 mt-1 text-sm text-brand-600">
+          Add {pet.name}'s 15-digit chip number — type it, scan the barcode on the
+          paperwork, or upload the document. (A phone can't read the implanted chip
+          itself, but it can read the number off the paperwork.)
+        </p>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <label className="label">Chip number</label>
+            <input
+              className="input"
+              inputMode="numeric"
+              value={chip}
+              onChange={(e) => setChip(e.target.value)}
+              placeholder="e.g. 985112345678901"
+            />
+          </div>
+          <button type="button" onClick={() => setScanOpen(true)} className="btn-ghost">
+            📷 Scan barcode
+          </button>
+          <button onClick={saveChip} disabled={savingChip} className="btn-primary">
+            {savingChip ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <label className="btn-ghost cursor-pointer text-sm">
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              capture="environment"
+              className="hidden"
+              onChange={onChipDoc}
+              disabled={chipUploading}
+            />
+            {chipUploading ? 'Uploading…' : 'Upload paperwork'}
+          </label>
+          <a
+            href="https://www.aaha.org/your-pet/pet-microchip-lookup/microchip-search/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-sky-600 underline hover:text-sky-700"
+          >
+            Look it up in the registry
+          </a>
+          {chipMsg && <span className="text-sm text-brand-600">{chipMsg}</span>}
+        </div>
+      </div>
+
+      {scanOpen && (
+        <Suspense fallback={null}>
+          <BarcodeScanner
+            onResult={(t) => {
+              setChip(t.replace(/\D/g, ''))
+              setScanOpen(false)
+            }}
+            onClose={() => setScanOpen(false)}
+          />
+        </Suspense>
+      )}
     </div>
   )
 }

@@ -17,6 +17,21 @@ export async function uploadPetPhoto(
   return path
 }
 
+// Upload any document (e.g. microchip paperwork) into the pet's private folder.
+export async function uploadPetFile(
+  userId: string,
+  petId: string,
+  file: File,
+): Promise<string> {
+  const safe = file.name.replace(/[^\w.\-]+/g, '_')
+  const path = `${userId}/${petId}/${Date.now()}_${safe}`
+  const { error } = await supabase.storage
+    .from('pet-documents')
+    .upload(path, file, { upsert: false, contentType: file.type })
+  if (error) throw error
+  return path
+}
+
 // Accepts either a full http(s) URL (used as-is) or a storage path (signed).
 export async function resolvePhotoUrl(
   photoUrl: string | null,
