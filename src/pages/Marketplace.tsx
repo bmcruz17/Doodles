@@ -1,26 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import CategoryIcon from '../components/CategoryIcon'
 import type { Pet, Service, Vendor, VendorCategory } from '../lib/types'
 
 // Our platform commission on each transaction (the distributor margin).
 const COMMISSION_RATE = 0.18
 
-const CATEGORIES: (VendorCategory | 'all')[] = [
-  'all',
-  'grooming',
-  'mobile_vet',
-  'vet',
-  'food',
-  'sitter',
-  'walking',
-  'boarding',
-  'training',
-  'waste_removal',
+const CATEGORIES: { key: VendorCategory | 'all'; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'grooming', label: 'Grooming' },
+  { key: 'mobile_vet', label: 'Mobile vet' },
+  { key: 'walking', label: 'Walking' },
+  { key: 'sitter', label: 'Sitters' },
+  { key: 'waste_removal', label: 'Waste pickup' },
+  { key: 'food', label: 'Food' },
+  { key: 'supplies', label: 'Supplies' },
+  { key: 'insurance', label: 'Insurance' },
+  { key: 'training', label: 'Training' },
 ]
-
-const labelFor = (c: string) =>
-  c === 'all' ? 'All' : c.replace('_', ' ')
 
 type VendorWithServices = Vendor & { services: Service[] }
 
@@ -72,20 +70,34 @@ export default function Marketplace() {
         for now we confirm and coordinate each request.)
       </p>
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        {CATEGORIES.map((c) => (
-          <button
-            key={c}
-            onClick={() => setCategory(c)}
-            className={`rounded-full px-3 py-1 text-sm capitalize transition ${
-              category === c
-                ? 'bg-sky-600 text-white'
-                : 'bg-white text-brand-600 hover:bg-brand-100'
-            }`}
-          >
-            {labelFor(c)}
-          </button>
-        ))}
+      <div className="mb-6 grid grid-cols-4 gap-3 sm:grid-cols-5">
+        {CATEGORIES.map(({ key, label }) => {
+          const active = category === key
+          return (
+            <button
+              key={key}
+              onClick={() => setCategory(key)}
+              className="flex flex-col items-center gap-1.5"
+            >
+              <span
+                className={`flex h-14 w-14 items-center justify-center rounded-2xl transition ${
+                  active
+                    ? 'bg-sky-600 text-white shadow-sm'
+                    : 'border border-brand-200 bg-white text-sky-600 hover:border-sky-400'
+                }`}
+              >
+                <CategoryIcon name={key} />
+              </span>
+              <span
+                className={`text-center text-xs leading-tight ${
+                  active ? 'font-semibold text-brand-900' : 'text-brand-600'
+                }`}
+              >
+                {label}
+              </span>
+            </button>
+          )
+        })}
       </div>
 
       {loading ? (
