@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import CategoryIcon from '../components/CategoryIcon'
@@ -24,10 +25,19 @@ type VendorWithServices = Vendor & { services: Service[] }
 
 export default function Marketplace() {
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [vendors, setVendors] = useState<VendorWithServices[]>([])
   const [pets, setPets] = useState<Pet[]>([])
-  const [category, setCategory] = useState<VendorCategory | 'all'>('all')
+  const initialCategory = (searchParams.get('category') as VendorCategory | 'all' | null) ?? 'all'
+  const [category, setCategory] = useState<VendorCategory | 'all'>(
+    CATEGORIES.some((c) => c.key === initialCategory) ? initialCategory : 'all',
+  )
   const [loading, setLoading] = useState(true)
+
+  function selectCategory(key: VendorCategory | 'all') {
+    setCategory(key)
+    setSearchParams(key === 'all' ? {} : { category: key }, { replace: true })
+  }
   const [booking, setBooking] = useState<
     { vendor: VendorWithServices; service: Service } | null
   >(null)
@@ -76,7 +86,7 @@ export default function Marketplace() {
           return (
             <button
               key={key}
-              onClick={() => setCategory(key)}
+              onClick={() => selectCategory(key)}
               className="flex flex-col items-center gap-1.5"
             >
               <span
