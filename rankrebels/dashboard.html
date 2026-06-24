@@ -199,7 +199,7 @@
     </div>
 
     <div class="panel">
-      <div class="panel-h">One-time onboarding (booked, by who acquired)</div>
+      <div class="panel-h">Revenue by source (feeds the split above)</div>
       <table id="onboarding-tbl"></table>
     </div>
 
@@ -486,53 +486,54 @@ function renderCustomers(){
 
 /* ===== MONEY ===== */
 function payout(){
+  // Floor + split apply to ALL revenue this period: onboarding cash + recurring MRR.
   var live = clients.filter(function(c){return c.stage==='published';});
-  var mrrBrandon = live.filter(function(c){return c.acquired_by==='brandon';}).reduce(function(a,c){return a+Number(c.monthly_charge||0);},0);
-  var mrrEric = live.filter(function(c){return c.acquired_by==='eric';}).reduce(function(a,c){return a+Number(c.monthly_charge||0);},0);
-  var total = mrrBrandon+mrrEric;
-  var floor = Number(settings.brandon_floor)||0;
-  var pct = Number(settings.eric_pct)||0;
-  var above = Math.max(0, total-floor);
-  var ericShare = total>0 ? mrrEric/total : 0;
-  var ericAbove = above*ericShare;
-  var ericPay = pct*ericAbove;
-  var brandonPay = total-ericPay;
-  return {mrrBrandon:mrrBrandon,mrrEric:mrrEric,total:total,floor:floor,pct:pct,above:above,ericAbove:ericAbove,ericPay:ericPay,brandonPay:brandonPay};
+  var booked = clients.filter(function(c){return ['accepted','in_build','finalized','published'].indexOf(c.stage)>=0;});
+  function mrr(who){ return live.filter(function(c){return c.acquired_by===who;}).reduce(function(a,c){return a+Number(c.monthly_charge||0);},0); }
+  function onb(who){ return booked.filter(function(c){return c.acquired_by===who;}).reduce(function(a,c){return a+Number(c.onboarding_fee||0);},0); }
+  var mrrBrandon=mrr('brandon'), mrrEric=mrr('eric');
+  var onbBrandon=onb('brandon'), onbEric=onb('eric');
+  var revBrandon=mrrBrandon+onbBrandon, revEric=mrrEric+onbEric;
+  var total=revBrandon+revEric;
+  var floor=Number(settings.brandon_floor)||0, pct=Number(settings.eric_pct)||0;
+  var above=Math.max(0, total-floor);
+  var ericShare=total>0 ? revEric/total : 0;
+  var ericAbove=above*ericShare;
+  var ericPay=pct*ericAbove;
+  var brandonPay=total-ericPay;
+  return {mrrBrandon:mrrBrandon,mrrEric:mrrEric,onbBrandon:onbBrandon,onbEric:onbEric,
+    revBrandon:revBrandon,revEric:revEric,mrr:mrrBrandon+mrrEric,onb:onbBrandon+onbEric,
+    total:total,floor:floor,pct:pct,above:above,ericAbove:ericAbove,ericPay:ericPay,brandonPay:brandonPay};
 }
 function monthlyExpenses(){ return expenses.filter(function(e){return e.active&&e.recurring;}).reduce(function(a,e){return a+Number(e.amount||0);},0); }
 function renderMoney(){
   var p=payout();
-  var mrr=p.total, arr=mrr*12;
-  var onboardBooked=clients.filter(function(c){return ['accepted','in_build','finalized','published'].indexOf(c.stage)>=0;}).reduce(function(a,c){return a+Number(c.onboarding_fee||0);},0);
+  var arr=p.mrr*12;
   var mexp=monthlyExpenses();
   el('money-stats').innerHTML=
-    statCard('MRR', money(mrr), live_count()+' live customers')+
+    statCard('MRR', money(p.mrr), live_count()+' live customers')+
     statCard('ARR (run-rate)', money(arr), 'MRR × 12')+
-    statCard('Onboarding booked', money(onboardBooked), 'one-time, accepted→live')+
-    statCard('Net monthly', money(mrr-mexp), money(mexp)+' expenses');
+    statCard('Onboarding booked', money(p.onb), 'one-time, accepted→live')+
+    statCard('Net monthly', money(p.mrr-mexp), money(mexp)+' recurring expenses');
 
   el('set-floor').value=settings.brandon_floor; el('set-eric').value=Math.round((settings.eric_pct||0)*100);
   el('waterfall').innerHTML=
     '<tbody>'+
-    wf('Total MRR', money(p.total), '')+
-    wf('— Brandon\'s deals', money(p.mrrBrandon), 'badge brandon')+
-    wf('— Eric\'s deals', money(p.mrrEric), 'badge eric')+
+    wf('Revenue this period (onboarding + MRR)', money(p.total), '')+
+    '<tr><td>&nbsp;&nbsp;from <span class="badge brandon">brandon</span> deals</td><td class="num">'+money(p.revBrandon)+'</td></tr>'+
+    '<tr><td>&nbsp;&nbsp;from <span class="badge eric">eric</span> deals</td><td class="num">'+money(p.revEric)+'</td></tr>'+
     wf('Floor to Brandon (first '+money(p.floor)+')', money(Math.min(p.floor,p.total)), '')+
     wf('Revenue above floor', money(p.above), '')+
     wf('Eric\'s deals above floor', money(p.ericAbove), '')+
-    '<tr class="tot"><td>Eric gets ('+Math.round(p.pct*100)+'% of above-floor on his deals)</td><td class="num">'+money(p.ericPay)+'</td></tr>'+
-    '<tr class="tot"><td>Brandon gets (everything else)</td><td class="num">'+money(p.brandonPay)+'</td></tr>'+
+    '<tr class="tot"><td>Eric gets ('+Math.round(p.pct*100)+'% of his above-floor revenue)</td><td class="num">'+money(p.ericPay)+'</td></tr>'+
+    '<tr class="tot"><td>Brandon gets (floor + everything else)</td><td class="num">'+money(p.brandonPay)+'</td></tr>'+
     '</tbody>';
 
-  // onboarding split
-  var rows='';
-  ['brandon','eric'].forEach(function(who){
-    var booked=clients.filter(function(c){return c.acquired_by===who && ['accepted','in_build','finalized','published'].indexOf(c.stage)>=0;}).reduce(function(a,c){return a+Number(c.onboarding_fee||0);},0);
-    var bShare = who==='brandon'? booked : booked*0.65;
-    var eShare = who==='brandon'? 0 : booked*0.35;
-    rows+='<tr><td><span class="badge '+who+'">'+who+'</span> deals</td><td class="num">'+money(booked)+'</td><td class="num">'+money(bShare)+'</td><td class="num">'+money(eShare)+'</td></tr>';
-  });
-  el('onboarding-tbl').innerHTML='<thead><tr><th>Source</th><th class="num">Onboarding</th><th class="num">→ Brandon</th><th class="num">→ Eric</th></tr></thead><tbody>'+rows+'</tbody>';
+  // revenue by source (feeds the waterfall above)
+  el('onboarding-tbl').innerHTML='<thead><tr><th>Source</th><th class="num">Onboarding</th><th class="num">MRR</th><th class="num">Total revenue</th></tr></thead><tbody>'+
+    '<tr><td><span class="badge brandon">brandon</span> deals</td><td class="num">'+money(p.onbBrandon)+'</td><td class="num">'+money(p.mrrBrandon)+'</td><td class="num">'+money(p.revBrandon)+'</td></tr>'+
+    '<tr><td><span class="badge eric">eric</span> deals</td><td class="num">'+money(p.onbEric)+'</td><td class="num">'+money(p.mrrEric)+'</td><td class="num">'+money(p.revEric)+'</td></tr>'+
+    '</tbody>';
 
   // expenses
   var et='';
@@ -589,28 +590,30 @@ function renderWarRoom(){
   var inc=projRows.filter(function(r){return r.include;});
   var onboard=inc.reduce(function(a,r){return a+Number(r.onboard||0);},0);
   var mrr=inc.reduce(function(a,r){return a+Number(r.monthly||0);},0);
-  var mrrEric=inc.filter(function(r){return r.acq==='eric';}).reduce(function(a,r){return a+Number(r.monthly||0);},0);
+  var combined=onboard+mrr;
+  var combinedEric=inc.filter(function(r){return r.acq==='eric';}).reduce(function(a,r){return a+Number(r.onboard||0)+Number(r.monthly||0);},0);
   var floor=Number(settings.brandon_floor)||0, pct=Number(settings.eric_pct)||0;
-  var above=Math.max(0,mrr-floor); var ericPay=pct*(mrr>0?(above*mrrEric/mrr):0); var brandonPay=mrr-ericPay;
+  var above=Math.max(0,combined-floor); var ericPay=pct*(combined>0?(above*combinedEric/combined):0); var brandonPay=combined-ericPay;
   el('proj-stats').innerHTML=
     statCard('Projected onboarding', money(onboard), inc.length+' deals (one-time)')+
     statCard('Projected new MRR', money(mrr), money(mrr*12)+' ARR')+
-    statCard('→ Brandon / mo', money(brandonPay), 'recurring, after split')+
-    statCard('→ Eric / mo', money(ericPay), 'recurring, after $'+floor+' floor');
+    statCard('→ Brandon (onb + 1st mo)', money(brandonPay), 'floor applied to total')+
+    statCard('→ Eric (onb + 1st mo)', money(ericPay), 'after $'+floor+' floor');
 }
 function projEdit(i,k,v){ if(k==='onboard'||k==='monthly') v=Number(v)||0; projRows[i][k]=v; if(k!=='name') renderWarRoom(); else { /* name: light update */ var inc=true; } updateProjStatsOnly(); }
 function updateProjStatsOnly(){ /* recalc stats without re-rendering inputs (keeps focus) */
   var inc=projRows.filter(function(r){return r.include;});
   var onboard=inc.reduce(function(a,r){return a+Number(r.onboard||0);},0);
   var mrr=inc.reduce(function(a,r){return a+Number(r.monthly||0);},0);
-  var mrrEric=inc.filter(function(r){return r.acq==='eric';}).reduce(function(a,r){return a+Number(r.monthly||0);},0);
+  var combined=onboard+mrr;
+  var combinedEric=inc.filter(function(r){return r.acq==='eric';}).reduce(function(a,r){return a+Number(r.onboard||0)+Number(r.monthly||0);},0);
   var floor=Number(settings.brandon_floor)||0, pct=Number(settings.eric_pct)||0;
-  var above=Math.max(0,mrr-floor); var ericPay=pct*(mrr>0?(above*mrrEric/mrr):0); var brandonPay=mrr-ericPay;
+  var above=Math.max(0,combined-floor); var ericPay=pct*(combined>0?(above*combinedEric/combined):0); var brandonPay=combined-ericPay;
   el('proj-stats').innerHTML=
     statCard('Projected onboarding', money(onboard), inc.length+' deals (one-time)')+
     statCard('Projected new MRR', money(mrr), money(mrr*12)+' ARR')+
-    statCard('→ Brandon / mo', money(brandonPay), 'recurring, after split')+
-    statCard('→ Eric / mo', money(ericPay), 'recurring, after $'+floor+' floor');
+    statCard('→ Brandon (onb + 1st mo)', money(brandonPay), 'floor applied to total')+
+    statCard('→ Eric (onb + 1st mo)', money(ericPay), 'after $'+floor+' floor');
 }
 function projDel(i){ projRows.splice(i,1); renderWarRoom(); }
 
