@@ -43,3 +43,27 @@ export interface ParseRecordsResponse {
 export function parseRecords(petId: string, path: string) {
   return invoke<ParseRecordsResponse>('parse-records', { pet_id: petId, path })
 }
+
+export interface ShowcasePost {
+  pet_name: string | null
+  location: string | null
+  created_at: string
+  image_url: string
+}
+
+/**
+ * Public showcase of recent Pack photos for the landing page. Tolerant of
+ * failure — returns [] so the homepage never breaks if the feed is empty or
+ * the function is unreachable.
+ */
+export async function fetchShowcase(): Promise<ShowcasePost[]> {
+  try {
+    const { data } = await supabase.functions.invoke<{ posts: ShowcasePost[] }>(
+      'showcase',
+      {},
+    )
+    return data?.posts ?? []
+  } catch {
+    return []
+  }
+}

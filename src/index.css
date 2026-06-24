@@ -41,3 +41,26 @@ body {
     @apply mb-1 block text-xs font-medium uppercase tracking-wide text-brand-600;
   }
 }
+
+/* Continuous horizontal ticker for the landing "live from the pack" strip.
+   The track holds two copies of the list, so translating by -50% loops
+   seamlessly. */
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-ticker {
+  animation: ticker-scroll 45s linear infinite;
+}
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-ticker {
+    animation: none;
+  }
+}

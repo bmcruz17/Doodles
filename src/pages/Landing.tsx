@@ -1,6 +1,20 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { fetchShowcase, type ShowcasePost } from '../lib/api'
 import { BRAND, BUILD_VERSION } from '../version'
+
+function timeAgo(iso: string): string {
+  const s = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 1000))
+  if (s < 60) return 'just now'
+  const m = Math.round(s / 60)
+  if (m < 60) return `${m}m ago`
+  const h = Math.round(m / 60)
+  if (h < 24) return `${h}h ago`
+  const d = Math.round(h / 24)
+  if (d < 7) return `${d}d ago`
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
 
 const features = [
   {
@@ -45,6 +59,23 @@ const steps = [
 
 export default function Landing() {
   const { session } = useAuth()
+  const [showcase, setShowcase] = useState<ShowcasePost[]>([])
+
+  useEffect(() => {
+    let active = true
+    fetchShowcase().then((posts) => {
+      if (active) setShowcase(posts)
+    })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  // Fill a 10-tile mosaic by repeating whatever photos we have.
+  const mosaic =
+    showcase.length > 0
+      ? Array.from({ length: 10 }, (_, i) => showcase[i % showcase.length])
+      : []
 
   return (
     <div className="min-h-screen bg-brand-50 text-brand-900">
@@ -76,11 +107,44 @@ export default function Landing() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
+        {/* Background: a soft mosaic of real Pack dog photos, or a paw pattern
+            before any have been posted. */}
+        {mosaic.length > 0 ? (
+          <div className="pointer-events-none absolute inset-0 grid grid-cols-3 grid-rows-3 sm:grid-cols-5 sm:grid-rows-2">
+            {mosaic.map((p, i) => (
+              <div key={i} className="overflow-hidden">
+                <img
+                  src={p.image_url}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.07]"
+            style={{
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 24 24' fill='%231a6fc0'%3E%3Ccircle cx='7' cy='9' r='1.8'/%3E%3Ccircle cx='11' cy='6.5' r='1.8'/%3E%3Ccircle cx='15.5' cy='7.5' r='1.8'/%3E%3Ccircle cx='18' cy='11.5' r='1.6'/%3E%3Cpath d='M12 12c-2.6 0-4.7 1.9-4.7 4 0 1.6 1.3 2.4 2.8 2.4.9 0 1.3-.3 1.9-.3s1 .3 1.9.3c1.5 0 2.8-.8 2.8-2.4 0-2.1-2.1-4-4.7-4Z'/%3E%3C/svg%3E\")",
+              backgroundSize: '90px 90px',
+            }}
+          />
+        )}
+        {/* Legibility wash over the photos. */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              'radial-gradient(70% 60% at 50% -10%, rgba(78,166,247,0.22) 0%, rgba(244,166,35,0.10) 38%, rgba(250,246,239,0) 72%)',
+              'radial-gradient(80% 70% at 50% 10%, rgba(250,246,239,0.86) 0%, rgba(250,246,239,0.92) 45%, rgba(250,246,239,0.97) 100%)',
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(70% 60% at 50% -10%, rgba(78,166,247,0.20) 0%, rgba(244,166,35,0.10) 38%, rgba(250,246,239,0) 72%)',
           }}
         />
         <div className="relative mx-auto max-w-3xl px-4 py-20 text-center sm:py-28">
@@ -109,6 +173,47 @@ export default function Landing() {
           </p>
         </div>
       </section>
+
+      {/* Live ticker — real photos from the pack */}
+      {showcase.length > 0 && (
+        <section className="border-y border-brand-200/60 bg-white/60 py-5">
+          <div className="mx-auto mb-3 flex max-w-6xl items-center gap-2 px-4">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-500 opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-sky-600" />
+            </span>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-brand-600">
+              Live from the pack
+            </h2>
+          </div>
+          <div className="relative overflow-hidden">
+            <div className="flex w-max animate-ticker gap-3 px-4">
+              {[...showcase, ...showcase].map((p, i) => (
+                <figure
+                  key={i}
+                  className="w-44 shrink-0 overflow-hidden rounded-xl border border-brand-200 bg-white shadow-sm"
+                >
+                  <img
+                    src={p.image_url}
+                    alt={p.pet_name ?? 'A good dog'}
+                    className="h-28 w-full object-cover"
+                    loading="lazy"
+                  />
+                  <figcaption className="p-2">
+                    <p className="truncate text-sm font-semibold text-brand-900">
+                      {p.pet_name || 'A good dog'}
+                    </p>
+                    <p className="truncate text-xs text-brand-500">
+                      {p.location ? `${p.location} · ` : ''}
+                      {timeAgo(p.created_at)}
+                    </p>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Features */}
       <section className="mx-auto max-w-6xl px-4 py-12">
