@@ -67,3 +67,18 @@ export async function fetchShowcase(): Promise<ShowcasePost[]> {
     return []
   }
 }
+
+export interface AddFriendResponse {
+  status:
+    | 'sent'
+    | 'accepted'
+    | 'pending'
+    | 'already_friends'
+    | 'not_member'
+  message: string
+}
+
+/** Send a friend request by email (resolved to a member server-side). */
+export function addFriend(email: string) {
+  return invoke<AddFriendResponse>('add-friend', { email })
+}

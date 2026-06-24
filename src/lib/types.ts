@@ -216,6 +216,19 @@ export type SitterProfile = {
   updated_at: string
 }
 
+export type FriendshipStatus = 'pending' | 'accepted'
+
+export type Friendship = {
+  id: string
+  requester_id: string
+  addressee_id: string
+  requester_name: string
+  addressee_name: string
+  status: FriendshipStatus
+  created_at: string
+  updated_at: string
+}
+
 export type Post = {
   id: string
   author_id: string
@@ -354,6 +367,15 @@ export type Database = {
         Row: SitterProfile
         Insert: Partial<SitterProfile> & { user_id: string }
         Update: Partial<SitterProfile>
+        Relationships: []
+      }
+      friendships: {
+        Row: Friendship
+        Insert: Partial<Friendship> & {
+          requester_id: string
+          addressee_id: string
+        }
+        Update: Partial<Friendship>
         Relationships: []
       }
     }

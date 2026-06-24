@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { uploadPostPhoto, extractHashtags } from '../lib/posts'
@@ -88,11 +89,16 @@ export default function Feed() {
 
   return (
     <div className="mx-auto max-w-xl space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold text-brand-900">The Pack</h1>
-        <p className="text-sm text-brand-600">
-          Live shots from dogs around the community. Share yours.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-brand-900">The Pack</h1>
+          <p className="text-sm text-brand-600">
+            Live shots from dogs around the community. Share yours.
+          </p>
+        </div>
+        <Link to="/friends" className="btn-ghost shrink-0 text-sm">
+          Friends
+        </Link>
       </div>
 
       <Composer
