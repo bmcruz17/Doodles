@@ -232,6 +232,8 @@ export type Friendship = {
   updated_at: string
 }
 
+export type PostKind = 'member' | 'vendor'
+
 export type Post = {
   id: string
   author_id: string
@@ -242,6 +244,12 @@ export type Post = {
   image_url: string | null
   location: string | null
   hashtags: string[]
+  kind: PostKind
+  vendor_id: string | null
+  vendor_name: string | null
+  target_breed: string | null
+  link_url: string | null
+  cta: string | null
   created_at: string
 }
 
@@ -347,9 +355,23 @@ export type Database = {
       }
       posts: {
         Row: Post
-        Insert: Omit<Post, 'id' | 'created_at'> & {
+        Insert: {
           id?: string
+          author_id: string
+          author_name?: string
+          pet_id?: string | null
+          pet_name?: string | null
+          caption?: string
+          image_url?: string | null
+          location?: string | null
           hashtags?: string[]
+          kind?: PostKind
+          vendor_id?: string | null
+          vendor_name?: string | null
+          target_breed?: string | null
+          link_url?: string | null
+          cta?: string | null
+          created_at?: string
         }
         Update: Partial<Post>
         Relationships: []

@@ -17,7 +17,7 @@ export default function Login() {
     setBusy(true)
     try {
       await signIn(email, password)
-      navigate('/dashboard')
+      navigate('/feed')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign in failed')
     } finally {

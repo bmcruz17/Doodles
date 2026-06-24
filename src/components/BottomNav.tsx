@@ -2,8 +2,8 @@ import { NavLink } from 'react-router-dom'
 
 // App-style bottom tab bar for phones (hidden on >= sm, where the top nav shows).
 const tabs = [
+  { to: '/feed', label: 'Home', icon: FeedIcon, end: true },
   { to: '/dashboard', label: 'Pets', icon: PawIcon, end: true },
-  { to: '/feed', label: 'Pack', icon: FeedIcon },
   { to: '/marketplace', label: 'Services', icon: ShopIcon },
   { to: '/travel', label: 'Travel', icon: PlaneIcon },
   { to: '/membership', label: 'Member', icon: StarIcon },

@@ -3,8 +3,8 @@ import { useAuth } from '../hooks/useAuth'
 import { BUILD_VERSION, BRAND } from '../version'
 
 const links = [
-  { to: '/dashboard', label: 'Dashboard', end: true },
-  { to: '/feed', label: 'Pack' },
+  { to: '/feed', label: 'Home', end: true },
+  { to: '/dashboard', label: 'Pets', end: true },
   { to: '/marketplace', label: 'Marketplace' },
   { to: '/travel', label: 'Travel' },
   { to: '/membership', label: 'Membership' },
@@ -22,7 +22,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-20 border-b border-brand-200 bg-brand-50/80 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
-        <Link to="/dashboard" className="flex items-center gap-2">
+        <Link to="/feed" className="flex items-center gap-2">
           <img src="/doodle.svg" alt={BRAND} className="h-8 w-8" />
           <span className="text-lg font-semibold tracking-tight text-brand-900">
             {BRAND}

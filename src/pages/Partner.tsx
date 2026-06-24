@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { uploadPostPhoto } from '../lib/posts'
 import type { Service, Vendor, VendorCategory } from '../lib/types'
 
 // Self-serve provider listing. Local providers list FREE — they create a
@@ -191,6 +192,10 @@ export default function Partner() {
         </section>
       )}
 
+      {!loading && existing.length > 0 && (
+        <PromoteInFeed userId={user?.id ?? ''} vendors={existing} />
+      )}
+
       <form onSubmit={submit} className="card space-y-4">
         <h2 className="text-lg font-semibold text-brand-900">Add a listing</h2>
 
@@ -295,5 +300,154 @@ export default function Partner() {
         </p>
       </form>
     </div>
+  )
+}
+
+// --------------------------------------------------------------------------
+// Promote a product/post into the breed-targeted Pack feed.
+// --------------------------------------------------------------------------
+function PromoteInFeed({
+  userId,
+  vendors,
+}: {
+  userId: string
+  vendors: (Vendor & { services: Service[] })[]
+}) {
+  const [open, setOpen] = useState(false)
+  const [vendorId, setVendorId] = useState(vendors[0]?.id ?? '')
+  const [caption, setCaption] = useState('')
+  const [breed, setBreed] = useState('')
+  const [cta, setCta] = useState('Shop now')
+  const [link, setLink] = useState('')
+  const [file, setFile] = useState<File | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!userId) return
+    setBusy(true)
+    setMsg(null)
+    try {
+      let image_url: string | null = null
+      if (file) image_url = await uploadPostPhoto(userId, file)
+      const vendor = vendors.find((v) => v.id === vendorId)
+      const { error } = await supabase.from('posts').insert({
+        author_id: userId,
+        author_name: vendor?.name ?? 'Partner',
+        kind: 'vendor',
+        vendor_id: vendorId,
+        vendor_name: vendor?.name ?? null,
+        caption: caption.trim(),
+        image_url,
+        target_breed: breed.trim() || null,
+        link_url: link.trim() || null,
+        cta: cta.trim() || 'Learn more',
+      })
+      if (error) throw error
+      setCaption('')
+      setBreed('')
+      setLink('')
+      setFile(null)
+      setMsg('Posted to the feed.')
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : 'Could not post')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="card border-amber-200 bg-amber-50/60">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+            Marketing
+          </p>
+          <h2 className="text-lg font-semibold text-brand-900">
+            Promote a product in the feed
+          </h2>
+          <p className="mt-1 text-sm text-brand-600">
+            Reach owners directly — target a breed and your post shows up in their
+            Pack feed.
+          </p>
+        </div>
+        <button onClick={() => setOpen((o) => !o)} className="btn-ghost text-sm">
+          {open ? 'Close' : 'Create'}
+        </button>
+      </div>
+
+      {open && (
+        <form onSubmit={submit} className="mt-4 space-y-3">
+          {vendors.length > 1 && (
+            <div>
+              <label className="label">From listing</label>
+              <select
+                className="input"
+                value={vendorId}
+                onChange={(e) => setVendorId(e.target.value)}
+              >
+                {vendors.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div>
+            <label className="label">Post copy</label>
+            <textarea
+              className="input min-h-[70px]"
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              placeholder="New grain-free formula for doodles — 15% off this week."
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="label">Target breed (optional)</label>
+              <input
+                className="input"
+                value={breed}
+                onChange={(e) => setBreed(e.target.value)}
+                placeholder="Goldendoodle — blank = all dogs"
+              />
+            </div>
+            <div>
+              <label className="label">Button text</label>
+              <input
+                className="input"
+                value={cta}
+                onChange={(e) => setCta(e.target.value)}
+                placeholder="Shop now"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="label">Link (optional)</label>
+            <input
+              className="input"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              placeholder="https://…"
+            />
+          </div>
+          <div>
+            <label className="label">Image</label>
+            <input
+              type="file"
+              accept="image/*"
+              className="input"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
+          </div>
+          {msg && <p className="text-sm text-brand-600">{msg}</p>}
+          <button type="submit" disabled={busy} className="btn-primary">
+            {busy ? 'Posting…' : 'Post to feed'}
+          </button>
+        </form>
+      )}
+    </section>
   )
 }

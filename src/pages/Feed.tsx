@@ -87,6 +87,20 @@ export default function Feed() {
     }
   }
 
+  // Sponsored (vendor) posts only show to owners whose dog matches the target
+  // breed; member posts always show. Untargeted vendor posts show to everyone.
+  const petBreeds = pets
+    .map((p) => (p.breed || '').toLowerCase().trim())
+    .filter(Boolean)
+  function matchesBreed(target: string | null): boolean {
+    if (!target || !target.trim()) return true
+    const t = target.toLowerCase().trim()
+    return petBreeds.some((b) => b.includes(t) || t.includes(b))
+  }
+  const visible = posts.filter(
+    (p) => p.kind !== 'vendor' || matchesBreed(p.target_breed),
+  )
+
   return (
     <div className="mx-auto max-w-xl space-y-5">
       <div className="flex items-start justify-between gap-3">
@@ -110,12 +124,12 @@ export default function Feed() {
 
       {loading ? (
         <p className="text-brand-600">Loading the feed…</p>
-      ) : posts.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="card text-center text-sm text-brand-500">
           No posts yet — be the first to share a photo of your dog!
         </div>
       ) : (
-        posts.map((post) => (
+        visible.map((post) => (
           <PostCard
             key={post.id}
             post={post}
@@ -366,24 +380,40 @@ function PostCard({
     onDeleted()
   }
 
-  const initial = (post.pet_name || post.author_name || '?').charAt(0).toUpperCase()
+  const isVendor = post.kind === 'vendor'
+  const headTitle = isVendor
+    ? post.vendor_name || 'Featured'
+    : post.pet_name || post.author_name
+  const initial = (headTitle || '?').charAt(0).toUpperCase()
 
   return (
     <article className="card overflow-hidden p-0">
       <div className="flex items-center gap-3 p-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-100 font-semibold text-sky-700">
+        <div
+          className={`flex h-9 w-9 items-center justify-center rounded-full font-semibold ${
+            isVendor ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'
+          }`}
+        >
           {initial}
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-brand-900">
-            {post.pet_name || post.author_name}
-            {post.pet_name && (
+            {headTitle}
+            {!isVendor && post.pet_name && (
               <span className="font-normal text-brand-500"> · {post.author_name}</span>
             )}
           </p>
           <p className="text-xs text-brand-500">
-            {post.location ? `${post.location} · ` : ''}
-            {timeAgo(post.created_at)}
+            {isVendor ? (
+              <span className="font-medium uppercase tracking-wide text-amber-600">
+                Sponsored
+              </span>
+            ) : (
+              <>
+                {post.location ? `${post.location} · ` : ''}
+                {timeAgo(post.created_at)}
+              </>
+            )}
           </p>
         </div>
         {canDelete && (
@@ -424,6 +454,17 @@ function PostCard({
 
         {post.caption && (
           <p className="text-sm text-brand-800">{post.caption}</p>
+        )}
+
+        {isVendor && (
+          <a
+            href={post.link_url || '/marketplace'}
+            target={post.link_url ? '_blank' : undefined}
+            rel="noopener noreferrer"
+            className="btn-primary mt-1 inline-flex text-sm"
+          >
+            {post.cta || 'Learn more'}
+          </a>
         )}
 
         {post.hashtags.length > 0 && (
