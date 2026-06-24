@@ -34,9 +34,19 @@ export default function Marketplace() {
   )
   const [loading, setLoading] = useState(true)
 
+  const [place, setPlace] = useState<string>(
+    () => localStorage.getItem('ph_place') ?? '',
+  )
+
   function selectCategory(key: VendorCategory | 'all') {
     setCategory(key)
     setSearchParams(key === 'all' ? {} : { category: key }, { replace: true })
+  }
+
+  function setLocation(v: string) {
+    setPlace(v)
+    if (v.trim()) localStorage.setItem('ph_place', v.trim())
+    else localStorage.removeItem('ph_place')
   }
   const [booking, setBooking] = useState<
     { vendor: VendorWithServices; service: Service } | null
@@ -62,13 +72,37 @@ export default function Marketplace() {
     }
   }, [])
 
-  const filtered = useMemo(
+  // Simple service-area match: a vendor serves the searched place if it serves
+  // anywhere, or its zip/location text matches what the user typed. (True radius
+  // search needs geocoding — this is the text-based MVP.)
+  function servesPlace(v: VendorWithServices, q: string): boolean {
+    if (!q) return true
+    if (v.serves_anywhere) return true
+    const needle = q.trim().toLowerCase()
+    return (
+      (v.zip ?? '').toLowerCase().includes(needle) ||
+      (v.location ?? '').toLowerCase().includes(needle)
+    )
+  }
+
+  const byCategory = useMemo(
     () =>
       category === 'all'
         ? vendors
         : vendors.filter((v) => v.category === category),
     [vendors, category],
   )
+
+  const localMatches = useMemo(
+    () => byCategory.filter((v) => servesPlace(v, place)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [byCategory, place],
+  )
+
+  // If a place is searched but nothing local matches, fall back to all in-category
+  // so the page is never empty — flagged in the UI.
+  const noLocal = place.trim().length > 0 && localMatches.length === 0
+  const filtered = noLocal ? byCategory : localMatches
 
   return (
     <div>
@@ -79,6 +113,26 @@ export default function Marketplace() {
         pre-negotiated price. (Payments &amp; instant scheduling land in Phase 2;
         for now we confirm and coordinate each request.)
       </p>
+
+      {/* Location search — find local vendors by zip / city */}
+      <div className="mb-6 flex items-center gap-2 rounded-2xl border border-brand-200 bg-white p-2 shadow-sm">
+        <svg className="ml-2 h-5 w-5 shrink-0 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10Z" />
+          <circle cx="12" cy="11" r="2" />
+        </svg>
+        <input
+          className="min-w-0 flex-1 border-none bg-transparent text-sm text-brand-900 placeholder:text-brand-400 focus:outline-none focus:ring-0"
+          value={place}
+          onChange={(e) => setLocation(e.target.value)}
+          placeholder="Enter your ZIP or city to find local vendors"
+          inputMode="text"
+        />
+        {place && (
+          <button onClick={() => setLocation('')} className="px-2 text-sm text-brand-400 hover:text-brand-700">
+            Clear
+          </button>
+        )}
+      </div>
 
       <div className="mb-6 grid grid-cols-4 gap-3 sm:grid-cols-5">
         {CATEGORIES.map(({ key, label }) => {
@@ -110,6 +164,25 @@ export default function Marketplace() {
         })}
       </div>
 
+      {place.trim() && !loading && (
+        <p className="mb-4 text-sm text-brand-600">
+          {noLocal ? (
+            <>
+              No partners serving <strong>{place.trim()}</strong> yet — showing all
+              partners. Know a great local pro?{' '}
+              <Link to="/partner" className="text-sky-600 underline">
+                Invite them
+              </Link>
+              .
+            </>
+          ) : (
+            <>
+              Showing partners serving <strong>{place.trim()}</strong>.
+            </>
+          )}
+        </p>
+      )}
+
       {loading ? (
         <p className="text-brand-600">Loading vendors…</p>
       ) : filtered.length === 0 ? (
@@ -134,6 +207,11 @@ export default function Marketplace() {
               </div>
 
               <div className="mt-2 flex flex-wrap gap-2">
+                {v.member_discount_pct > 0 && (
+                  <span className="inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                    Members save {v.member_discount_pct}%
+                  </span>
+                )}
                 {v.verified && (
                   <span className="inline-block rounded-full bg-brand-200 px-2 py-0.5 text-xs text-brand-800">
                     ✓ Verified partner
@@ -154,10 +232,24 @@ export default function Marketplace() {
                     <li key={s.id} className="flex items-center justify-between gap-3 text-sm">
                       <div>
                         <span className="text-brand-800">{s.title}</span>
-                        <span className="ml-2 text-brand-500">
-                          ${Number(s.price).toFixed(2)}
-                          {s.recurring && s.interval ? `/${s.interval}` : ''}
-                        </span>
+                        {v.member_discount_pct > 0 ? (
+                          <span className="ml-2">
+                            <span className="font-medium text-emerald-700">
+                              ${(Number(s.price) * (1 - v.member_discount_pct / 100)).toFixed(2)}
+                            </span>
+                            <span className="ml-1 text-brand-400 line-through">
+                              ${Number(s.price).toFixed(2)}
+                            </span>
+                            {s.recurring && s.interval ? (
+                              <span className="text-brand-500">/{s.interval}</span>
+                            ) : null}
+                          </span>
+                        ) : (
+                          <span className="ml-2 text-brand-500">
+                            ${Number(s.price).toFixed(2)}
+                            {s.recurring && s.interval ? `/${s.interval}` : ''}
+                          </span>
+                        )}
                       </div>
                       <button
                         onClick={() => setBooking({ vendor: v, service: s })}
@@ -237,7 +329,9 @@ function BookingModal({
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
 
-  const amount = Number(service.price)
+  const listPrice = Number(service.price)
+  const discountPct = vendor.member_discount_pct ?? 0
+  const amount = Math.round(listPrice * (1 - discountPct / 100) * 100) / 100
   const commission = Math.round(amount * COMMISSION_RATE * 100) / 100
 
   async function submit(e: React.FormEvent) {
@@ -302,6 +396,11 @@ function BookingModal({
                 {service.recurring && service.interval
                   ? `/${service.interval}`
                   : ''}
+                {discountPct > 0 && (
+                  <span className="ml-2 text-emerald-700">
+                    member price ({discountPct}% off ${listPrice.toFixed(2)})
+                  </span>
+                )}
               </p>
             </div>
 

@@ -121,6 +121,9 @@ export type Vendor = {
   rating: number | null
   status: VendorStatus
   stripe_connect_id: string | null
+  member_discount_pct: number
+  zip: string | null
+  serves_anywhere: boolean
   created_at: string
   updated_at: string
 }
