@@ -4,6 +4,31 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import type { Sex } from '../lib/types'
 
+// Parse a typed birthday into an ISO date (YYYY-MM-DD), or null if blank/invalid.
+// Accepts MM/DD/YYYY, M/D/YY, and YYYY-MM-DD (with / - or . separators).
+function parseBirthdate(input: string): string | null {
+  const s = input.trim()
+  if (!s) return null
+
+  let m = s.match(/^(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})$/)
+  if (m) {
+    const [, y, mo, d] = m
+    return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
+  }
+
+  m = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})$/)
+  if (m) {
+    let [, mo, d, y] = m
+    if (y.length === 2) y = `20${y}`
+    const mn = Number(mo)
+    const dn = Number(d)
+    if (mn < 1 || mn > 12 || dn < 1 || dn > 31) return null
+    return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
+  }
+
+  return null
+}
+
 export default function CreatePet() {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -26,6 +51,14 @@ export default function CreatePet() {
     e.preventDefault()
     if (!user) return
     setError(null)
+
+    // Accept a typed birthday in MM/DD/YYYY (or YYYY-MM-DD); store as ISO date.
+    const birthdateIso = parseBirthdate(form.birthdate)
+    if (form.birthdate.trim() && !birthdateIso) {
+      setError('Enter the birthday as MM/DD/YYYY (e.g. 03/14/2021).')
+      return
+    }
+
     setBusy(true)
     try {
       const { data, error: insertError } = await supabase
@@ -35,7 +68,7 @@ export default function CreatePet() {
           name: form.name,
           breed: form.breed || null,
           coat_type: form.coat_type || null,
-          birthdate: form.birthdate || null,
+          birthdate: birthdateIso,
           weight_lbs: form.weight_lbs ? Number(form.weight_lbs) : null,
           sex: form.sex,
           photo_url: null,
@@ -101,7 +134,36 @@ export default function CreatePet() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
+          <div className="min-w-0">
+            <label className="label" htmlFor="birthdate">Birthdate</label>
+            <input
+              id="birthdate"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              className="input"
+              value={form.birthdate}
+              onChange={(e) => update('birthdate', e.target.value)}
+              placeholder="MM/DD/YYYY"
+            />
+          </div>
+          <div className="min-w-0">
+            <label className="label" htmlFor="weight_lbs">Weight (lbs)</label>
+            <input
+              id="weight_lbs"
+              type="number"
+              step="0.1"
+              inputMode="decimal"
+              className="input"
+              value={form.weight_lbs}
+              onChange={(e) => update('weight_lbs', e.target.value)}
+              placeholder="45"
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="min-w-0">
             <label className="label" htmlFor="sex">Sex</label>
             <select
               id="sex"
@@ -113,31 +175,6 @@ export default function CreatePet() {
               <option value="male">Male</option>
               <option value="female">Female</option>
             </select>
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="label" htmlFor="birthdate">Birthdate</label>
-            <input
-              id="birthdate"
-              type="date"
-              className="input"
-              value={form.birthdate}
-              onChange={(e) => update('birthdate', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="weight_lbs">Weight (lbs)</label>
-            <input
-              id="weight_lbs"
-              type="number"
-              step="0.1"
-              className="input"
-              value={form.weight_lbs}
-              onChange={(e) => update('weight_lbs', e.target.value)}
-              placeholder="45"
-            />
           </div>
         </div>
 
