@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     }
 
     // ---- overview ----
-    const [usersC, petsC, vendors, bookings, sitters] = await Promise.all([
+    const [usersC, petsC, vendors, bookings, sitters, pets] = await Promise.all([
       admin.from('users').select('id', { count: 'exact', head: true }),
       admin.from('pets').select('id', { count: 'exact', head: true }),
       admin
@@ -89,7 +89,39 @@ Deno.serve(async (req) => {
         .from('sitter_profiles')
         .select('id, display_name, background_check_status, verified, location, created_at')
         .order('created_at', { ascending: false }),
+      admin.from('pets').select('breed, birthdate, sex, neutered').limit(5000),
     ])
+
+    // Aggregate the audience — the targetable data asset (never per-individual).
+    function stageOf(birthdate: string | null): string {
+      if (!birthdate) return 'unknown'
+      const y = (Date.now() - new Date(birthdate).getTime()) / (365.25 * 864e5)
+      if (isNaN(y)) return 'unknown'
+      if (y < 1) return 'puppy'
+      if (y < 3) return 'adolescent'
+      if (y < 8) return 'adult'
+      return 'senior'
+    }
+    const petRows = pets.data ?? []
+    const tally = (key: (p: Record<string, unknown>) => string) => {
+      const out: Record<string, number> = {}
+      for (const p of petRows) {
+        const k = key(p) || 'unknown'
+        out[k] = (out[k] ?? 0) + 1
+      }
+      return out
+    }
+    const audience = {
+      total: petRows.length,
+      by_stage: tally((p) => stageOf(p.birthdate as string | null)),
+      by_sex: tally((p) => (p.sex as string) ?? 'unknown'),
+      by_neuter: tally((p) =>
+        p.neutered === true ? 'neutered' : p.neutered === false ? 'intact' : 'unknown',
+      ),
+      top_breeds: Object.entries(tally((p) => ((p.breed as string) || 'Unknown').trim()))
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10),
+    }
 
     const bk = bookings.data ?? []
     const gmv = bk
@@ -112,6 +144,7 @@ Deno.serve(async (req) => {
       vendors: vendors.data ?? [],
       bookings: bk,
       sitters: sitters.data ?? [],
+      audience,
     })
   } catch (err) {
     console.error(err)

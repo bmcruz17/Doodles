@@ -121,6 +121,13 @@ export interface AdminOverview {
   vendors: AdminVendor[]
   bookings: AdminBooking[]
   sitters: AdminSitter[]
+  audience: {
+    total: number
+    by_stage: Record<string, number>
+    by_sex: Record<string, number>
+    by_neuter: Record<string, number>
+    top_breeds: [string, number][]
+  }
 }
 
 export function adminOverview() {

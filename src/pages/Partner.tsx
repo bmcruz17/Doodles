@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { uploadPostPhoto } from '../lib/posts'
-import type { Service, Vendor, VendorCategory } from '../lib/types'
+import { LIFE_STAGES } from '../lib/dog'
+import type { LifeStage, Service, Vendor, VendorCategory } from '../lib/types'
 
 // Self-serve provider listing. Local providers list FREE — they create a
 // vendor profile + services, which go live in the marketplace after review.
@@ -317,6 +318,7 @@ function PromoteInFeed({
   const [vendorId, setVendorId] = useState(vendors[0]?.id ?? '')
   const [caption, setCaption] = useState('')
   const [breed, setBreed] = useState('')
+  const [stage, setStage] = useState<LifeStage | ''>('')
   const [cta, setCta] = useState('Shop now')
   const [link, setLink] = useState('')
   const [file, setFile] = useState<File | null>(null)
@@ -341,6 +343,7 @@ function PromoteInFeed({
         caption: caption.trim(),
         image_url,
         target_breed: breed.trim() || null,
+        target_life_stage: stage || null,
         link_url: link.trim() || null,
         cta: cta.trim() || 'Learn more',
       })
@@ -404,15 +407,30 @@ function PromoteInFeed({
               placeholder="New grain-free formula for doodles — 15% off this week."
             />
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="label">Target breed (optional)</label>
+              <label className="label">Target breed</label>
               <input
                 className="input"
                 value={breed}
                 onChange={(e) => setBreed(e.target.value)}
-                placeholder="Goldendoodle — blank = all dogs"
+                placeholder="Blank = all"
               />
+            </div>
+            <div>
+              <label className="label">Life stage</label>
+              <select
+                className="input"
+                value={stage}
+                onChange={(e) => setStage(e.target.value as LifeStage | '')}
+              >
+                <option value="">All ages</option>
+                {LIFE_STAGES.map((s) => (
+                  <option key={s.key} value={s.key}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="label">Button text</label>

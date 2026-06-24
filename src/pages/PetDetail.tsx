@@ -33,6 +33,32 @@ export default function PetDetail() {
   const [chipUploading, setChipUploading] = useState(false)
   const [scanOpen, setScanOpen] = useState(false)
   const [chipMsg, setChipMsg] = useState<string | null>(null)
+  const [neutered, setNeutered] = useState<'yes' | 'no' | 'unknown'>('unknown')
+  const [interests, setInterests] = useState('')
+  const [savingPrefs, setSavingPrefs] = useState(false)
+  const [prefsMsg, setPrefsMsg] = useState<string | null>(null)
+
+  async function savePrefs() {
+    if (!pet) return
+    setSavingPrefs(true)
+    setPrefsMsg(null)
+    try {
+      const next = {
+        neutered: neutered === 'yes' ? true : neutered === 'no' ? false : null,
+        interests: interests
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+      }
+      await supabase.from('pets').update(next).eq('id', pet.id)
+      setPet({ ...pet, ...next })
+      setPrefsMsg('Saved.')
+    } catch (err) {
+      setPrefsMsg(err instanceof Error ? err.message : 'Could not save')
+    } finally {
+      setSavingPrefs(false)
+    }
+  }
 
   function profileObj(p: Pet): Record<string, unknown> {
     return p.ai_profile && typeof p.ai_profile === 'object' && !Array.isArray(p.ai_profile)
@@ -107,6 +133,12 @@ export default function PetDetail() {
           setPet(data)
           const num = (data && (profileObj(data).microchip as any))?.number
           if (num) setChip(String(num))
+          if (data) {
+            setNeutered(
+              data.neutered === true ? 'yes' : data.neutered === false ? 'no' : 'unknown',
+            )
+            setInterests((data.interests ?? []).join(', '))
+          }
           setLoading(false)
         }
       })
@@ -255,6 +287,42 @@ export default function PetDetail() {
           </a>
           {chipMsg && <span className="text-sm text-brand-600">{chipMsg}</span>}
         </div>
+      </div>
+
+      {/* Profile & preferences (powers care tips + relevant offers) */}
+      <div className="card mt-5">
+        <h2 className="text-lg font-semibold text-brand-900">Profile &amp; preferences</h2>
+        <p className="mb-3 mt-1 text-sm text-brand-600">
+          Helps {pet.name}'s AI companion tailor advice and surfaces relevant
+          offers in your feed. We never share your individual info with vendors.
+        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div>
+            <label className="label">Spayed / neutered</label>
+            <select
+              className="input"
+              value={neutered}
+              onChange={(e) => setNeutered(e.target.value as 'yes' | 'no' | 'unknown')}
+            >
+              <option value="unknown">Prefer not to say</option>
+              <option value="yes">Yes</option>
+              <option value="no">No / intact</option>
+            </select>
+          </div>
+          <div className="flex-1">
+            <label className="label">Favorite toys, treats &amp; activities</label>
+            <input
+              className="input"
+              value={interests}
+              onChange={(e) => setInterests(e.target.value)}
+              placeholder="tennis balls, peanut butter, hiking"
+            />
+          </div>
+          <button onClick={savePrefs} disabled={savingPrefs} className="btn-primary">
+            {savingPrefs ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+        {prefsMsg && <p className="mt-2 text-sm text-brand-600">{prefsMsg}</p>}
       </div>
 
       {scanOpen && (

@@ -4,6 +4,7 @@
 
 export type MembershipTier = 'basic' | 'premium'
 export type Sex = 'male' | 'female' | 'unknown'
+export type LifeStage = 'puppy' | 'adolescent' | 'adult' | 'senior'
 
 export type HealthRecordType =
   | 'vet_visit'
@@ -76,6 +77,8 @@ export type Pet = {
   photo_url: string | null
   ai_profile: Json
   notes: string | null
+  neutered: boolean | null
+  interests: string[]
   created_at: string
   updated_at: string
 }
@@ -249,6 +252,7 @@ export type Post = {
   vendor_id: string | null
   vendor_name: string | null
   target_breed: string | null
+  target_life_stage: LifeStage | null
   link_url: string | null
   cta: string | null
   created_at: string
@@ -297,9 +301,11 @@ export type Database = {
       }
       pets: {
         Row: Pet
-        Insert: Omit<Pet, Generated | 'ai_profile'> & {
+        Insert: Omit<Pet, Generated | 'ai_profile' | 'neutered' | 'interests'> & {
           owner_id: string
           ai_profile?: Json
+          neutered?: boolean | null
+          interests?: string[]
         }
         Update: Partial<Pet>
         Relationships: []
@@ -370,6 +376,7 @@ export type Database = {
           vendor_id?: string | null
           vendor_name?: string | null
           target_breed?: string | null
+          target_life_stage?: LifeStage | null
           link_url?: string | null
           cta?: string | null
           created_at?: string

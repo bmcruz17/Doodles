@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { uploadPostPhoto, extractHashtags } from '../lib/posts'
+import { lifeStage } from '../lib/dog'
 import type { Pet, Post, PostComment } from '../lib/types'
 
 function timeAgo(iso: string): string {
@@ -92,13 +93,20 @@ export default function Feed() {
   const petBreeds = pets
     .map((p) => (p.breed || '').toLowerCase().trim())
     .filter(Boolean)
+  const petStages = new Set(pets.map((p) => lifeStage(p.birthdate)).filter(Boolean))
   function matchesBreed(target: string | null): boolean {
     if (!target || !target.trim()) return true
     const t = target.toLowerCase().trim()
     return petBreeds.some((b) => b.includes(t) || t.includes(b))
   }
+  function matchesStage(target: string | null): boolean {
+    if (!target) return true
+    return petStages.has(target as ReturnType<typeof lifeStage>)
+  }
   const visible = posts.filter(
-    (p) => p.kind !== 'vendor' || matchesBreed(p.target_breed),
+    (p) =>
+      p.kind !== 'vendor' ||
+      (matchesBreed(p.target_breed) && matchesStage(p.target_life_stage)),
   )
 
   return (

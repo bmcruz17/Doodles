@@ -5,7 +5,7 @@ import {
   type AdminOverview,
 } from '../lib/api'
 
-type Board = 'vendors' | 'bookings' | 'sitters'
+type Board = 'vendors' | 'bookings' | 'sitters' | 'audience'
 
 function money(n: number): string {
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
@@ -84,7 +84,7 @@ export default function Admin() {
 
       {/* Board switcher */}
       <div className="flex gap-2">
-        {(['vendors', 'bookings', 'sitters'] as Board[]).map((b) => (
+        {(['vendors', 'bookings', 'sitters', 'audience'] as Board[]).map((b) => (
           <button
             key={b}
             onClick={() => setBoard(b)}
@@ -169,6 +169,24 @@ export default function Admin() {
         />
       )}
 
+      {board === 'audience' && (
+        <div className="space-y-4">
+          <div className="card border-sky-200 bg-sky-50/60">
+            <p className="text-sm text-brand-700">
+              <strong>{data.audience.total}</strong> dog profiles — the targetable
+              audience. Vendors pay to reach these segments; individual records are
+              never exposed. This is the first-party ad-targeting asset.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Segment title="By life stage" rows={Object.entries(data.audience.by_stage)} total={data.audience.total} />
+            <Segment title="By sex" rows={Object.entries(data.audience.by_sex)} total={data.audience.total} />
+            <Segment title="Spay / neuter" rows={Object.entries(data.audience.by_neuter)} total={data.audience.total} />
+            <Segment title="Top breeds" rows={data.audience.top_breeds} total={data.audience.total} />
+          </div>
+        </div>
+      )}
+
       {board === 'sitters' && (
         <Kanban
           columns={[
@@ -205,6 +223,43 @@ export default function Admin() {
             ),
           }))}
         />
+      )}
+    </div>
+  )
+}
+
+function Segment({
+  title,
+  rows,
+  total,
+}: {
+  title: string
+  rows: [string, number][]
+  total: number
+}) {
+  const sorted = [...rows].sort((a, b) => b[1] - a[1])
+  return (
+    <div className="card">
+      <h3 className="mb-2 text-sm font-semibold text-brand-800">{title}</h3>
+      {sorted.length === 0 ? (
+        <p className="text-xs text-brand-400">No data yet</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {sorted.map(([k, n]) => (
+            <li key={k}>
+              <div className="flex justify-between text-xs">
+                <span className="capitalize text-brand-700">{k}</span>
+                <span className="text-brand-500">{n}</span>
+              </div>
+              <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-brand-100">
+                <div
+                  className="h-full bg-sky-500"
+                  style={{ width: `${total ? Math.round((n / total) * 100) : 0}%` }}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   )
