@@ -72,6 +72,8 @@ export default function Friends() {
         </p>
       </div>
 
+      <InviteCard />
+
       <form onSubmit={submit} className="card space-y-3">
         <label className="label">Add a friend by email</label>
         <div className="flex gap-2">
@@ -142,6 +144,51 @@ export default function Friends() {
           )}
         </>
       )}
+    </div>
+  )
+}
+
+// Cross-platform invite: Web Share (phones) → native share sheet (incl.
+// contacts/Messages); falls back to copying the link. Reading the contact list
+// directly is native-only (Capacitor Contacts) / Chrome-Android (Contact
+// Picker), so sharing a link is the universal path.
+function InviteCard() {
+  const [copied, setCopied] = useState(false)
+  const link = `${window.location.origin}/signup`
+  const text = 'Join me on PackHub — everything for our dogs in one app.'
+
+  async function invite() {
+    const nav = navigator as Navigator & {
+      share?: (d: { title?: string; text?: string; url?: string }) => Promise<void>
+    }
+    if (nav.share) {
+      try {
+        await nav.share({ title: 'PackHub', text, url: link })
+        return
+      } catch {
+        /* user cancelled — fall through to copy */
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${link}`)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return (
+    <div className="card flex flex-col gap-2 border-sky-200 bg-sky-50/60 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 className="font-semibold text-brand-900">Invite friends from your phone</h2>
+        <p className="text-sm text-brand-600">
+          Share an invite to anyone in your contacts. When they join, add them here.
+        </p>
+      </div>
+      <button onClick={invite} className="btn-primary shrink-0">
+        {copied ? 'Link copied!' : 'Share invite'}
+      </button>
     </div>
   )
 }
