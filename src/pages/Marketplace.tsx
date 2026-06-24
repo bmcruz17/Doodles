@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import CategoryIcon from '../components/CategoryIcon'
@@ -173,6 +173,18 @@ export default function Marketplace() {
           ))}
         </div>
       )}
+
+      <div className="mt-8 flex flex-col items-center justify-between gap-3 rounded-2xl border border-sky-200 bg-sky-50/60 p-5 text-center sm:flex-row sm:text-left">
+        <div>
+          <h2 className="font-semibold text-brand-900">Are you a pet pro?</h2>
+          <p className="text-sm text-brand-600">
+            List your grooming, walking, sitting or vet services on PackHub — free.
+          </p>
+        </div>
+        <Link to="/partner" className="btn-primary shrink-0">
+          List your business
+        </Link>
+      </div>
 
       {booking && (
         <BookingModal
