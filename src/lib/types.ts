@@ -59,6 +59,7 @@ export type UserProfile = {
   phone: string | null
   membership_tier: MembershipTier | null
   stripe_customer_id: string | null
+  is_admin: boolean
   created_at: string
   updated_at: string
 }

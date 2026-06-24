@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { BUILD_VERSION, BRAND } from '../version'
 
@@ -13,6 +15,17 @@ const links = [
 export default function Navbar() {
   const { signOut, user } = useAuth()
   const navigate = useNavigate()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', user.id)
+      .maybeSingle()
+      .then(({ data }) => setIsAdmin(Boolean(data?.is_admin)))
+  }, [user])
 
   async function handleSignOut() {
     await signOut()
@@ -47,6 +60,22 @@ export default function Navbar() {
               </NavLink>
             </li>
           ))}
+          {isAdmin && (
+            <li>
+              <NavLink
+                to="/admin"
+                className={({ isActive }) =>
+                  `rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                    isActive
+                      ? 'bg-amber-100 text-amber-800'
+                      : 'text-amber-700 hover:bg-amber-50'
+                  }`
+                }
+              >
+                Admin
+              </NavLink>
+            </li>
+          )}
         </ul>
 
         <div className="ml-auto flex items-center gap-3">

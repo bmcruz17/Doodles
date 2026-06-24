@@ -82,3 +82,55 @@ export interface AddFriendResponse {
 export function addFriend(email: string) {
   return invoke<AddFriendResponse>('add-friend', { email })
 }
+
+export interface AdminVendor {
+  id: string
+  name: string
+  category: string
+  status: string
+  member_discount_pct: number
+  location: string | null
+  created_at: string
+}
+export interface AdminBooking {
+  id: string
+  status: string
+  amount: number
+  commission: number
+  vendor_id: string | null
+  created_at: string
+}
+export interface AdminSitter {
+  id: string
+  display_name: string
+  background_check_status: string
+  verified: boolean
+  location: string | null
+  created_at: string
+}
+export interface AdminOverview {
+  metrics: {
+    members: number
+    pets: number
+    vendors: number
+    active_vendors: number
+    bookings: number
+    gmv: number
+    commission: number
+  }
+  vendors: AdminVendor[]
+  bookings: AdminBooking[]
+  sitters: AdminSitter[]
+}
+
+export function adminOverview() {
+  return invoke<AdminOverview>('admin', { action: 'overview' })
+}
+export function adminAction(
+  action: 'set_vendor_status' | 'set_booking_status' | 'set_sitter_status',
+  id: string,
+  value: string,
+  verified?: boolean,
+) {
+  return invoke<{ ok: boolean }>('admin', { action, id, value, verified })
+}
