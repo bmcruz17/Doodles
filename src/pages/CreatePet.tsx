@@ -5,26 +5,43 @@ import { useAuth } from '../hooks/useAuth'
 import { uploadPetPhoto } from '../lib/photos'
 import type { Sex } from '../lib/types'
 
-// Parse a typed birthday into an ISO date (YYYY-MM-DD), or null if blank/invalid.
-// Accepts MM/DD/YYYY, M/D/YY, and YYYY-MM-DD (with / - or . separators).
+// Parse a typed birthday into an ISO date (YYYY-MM-DD), or null if invalid.
+// Accepts separators (/, -, .) OR bare digits: MM/DD/YYYY, M/D/YY, YYYY-MM-DD,
+// 03222020 (MMDDYYYY), 032220 (MMDDYY).
+function iso(y: string, mo: string, d: string): string | null {
+  const mn = Number(mo)
+  const dn = Number(d)
+  if (mn < 1 || mn > 12 || dn < 1 || dn > 31) return null
+  return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
+}
+
 function parseBirthdate(input: string): string | null {
   const s = input.trim()
   if (!s) return null
 
+  // YYYY-MM-DD with separators
   let m = s.match(/^(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})$/)
-  if (m) {
-    const [, y, mo, d] = m
-    return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
-  }
+  if (m) return iso(m[1], m[2], m[3])
 
+  // MM/DD/YYYY or M/D/YY with separators
   m = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})$/)
   if (m) {
-    let [, mo, d, y] = m
-    if (y.length === 2) y = `20${y}`
-    const mn = Number(mo)
-    const dn = Number(d)
-    if (mn < 1 || mn > 12 || dn < 1 || dn > 31) return null
-    return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
+    const y = m[3].length === 2 ? `20${m[3]}` : m[3]
+    return iso(y, m[1], m[2])
+  }
+
+  // Bare digits typed on a numeric keypad.
+  const digits = s.replace(/\D/g, '')
+  if (/^\d{8}$/.test(digits)) {
+    // Prefer MMDDYYYY; fall back to YYYYMMDD.
+    return (
+      iso(digits.slice(4), digits.slice(0, 2), digits.slice(2, 4)) ||
+      iso(digits.slice(0, 4), digits.slice(4, 6), digits.slice(6))
+    )
+  }
+  if (/^\d{6}$/.test(digits)) {
+    // MMDDYY
+    return iso(`20${digits.slice(4)}`, digits.slice(0, 2), digits.slice(2, 4))
   }
 
   return null
