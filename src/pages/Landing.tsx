@@ -169,7 +169,7 @@ export default function Landing() {
             </a>
           </div>
           <p className="mt-4 text-xs text-brand-500">
-            No credit card to start · Built for doodles, made for every dog.
+            No credit card to start.
           </p>
         </div>
       </section>
