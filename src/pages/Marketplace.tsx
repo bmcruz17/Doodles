@@ -225,8 +225,10 @@ function BookingModal({
       >
         {done ? (
           <div className="text-center">
-            <div className="text-4xl">✅</div>
-            <h2 className="mt-2 text-lg font-semibold text-brand-900">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-sky-600 text-2xl font-bold text-white">
+              ✓
+            </div>
+            <h2 className="mt-3 text-lg font-semibold text-brand-900">
               Request sent
             </h2>
             <p className="mt-1 text-sm text-brand-600">

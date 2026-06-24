@@ -4,24 +4,24 @@ import { BRAND, BUILD_VERSION } from '../version'
 
 const features = [
   {
-    icon: '🤖',
-    title: 'AI Care Companion',
-    body: "Breed-smart answers grounded in your dog's own profile and health records — coat, nutrition, training, and what's normal.",
+    tag: 'AI companion',
+    title: 'Answers that know your dog',
+    body: "Coat care, nutrition, training, or whether something looks normal — grounded in your dog's breed, age, and health records, not generic advice.",
   },
   {
-    icon: '📋',
-    title: 'Health Vault',
-    body: 'Vaccinations, vet visits, meds, allergies, and documents — one secure, shareable home for your dog’s whole history.',
+    tag: 'Health vault',
+    title: 'Every record in one place',
+    body: 'Vaccinations, vet visits, medications, and documents — organized, searchable, and ready to hand to a sitter, vet, or new groomer.',
   },
   {
-    icon: '🛁',
-    title: 'On-demand services',
-    body: 'Book grooming, mobile vet, sitters, waste removal, food and more. You book — we arrange it with vetted local pros.',
+    tag: 'Services',
+    title: 'Trusted local pros, one tap away',
+    body: 'Grooming, mobile vet, sitters, waste removal, fresh food and more — you book, and a vetted partner shows up at a price set in advance.',
   },
   {
-    icon: '✈️',
-    title: 'Dog travel',
-    body: 'Pet-friendly flights and stays, relocation logistics, and member access to private dog parks wherever you roam.',
+    tag: 'Travel',
+    title: 'Go everywhere together',
+    body: 'Pet-friendly flights and stays, relocation paperwork handled for you, and member access to private dog parks while you travel.',
   },
 ]
 
@@ -84,8 +84,8 @@ export default function Landing() {
           }}
         />
         <div className="relative mx-auto max-w-3xl px-4 py-20 text-center sm:py-28">
-          <span className="inline-block rounded-full border border-brand-200 bg-white px-3 py-1 text-xs font-medium text-brand-700">
-            For every breed 🐶
+          <span className="inline-block rounded-full border border-brand-200 bg-white px-3 py-1 text-xs font-medium uppercase tracking-wider text-sky-600">
+            Care for every breed
           </span>
           <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-6xl">
             Everything your dog needs,
@@ -114,10 +114,12 @@ export default function Landing() {
       <section className="mx-auto max-w-6xl px-4 py-12">
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((f) => (
-            <div key={f.title} className="card">
-              <div className="text-3xl">{f.icon}</div>
-              <h3 className="mt-3 text-lg font-semibold">{f.title}</h3>
-              <p className="mt-1 text-sm text-brand-600">{f.body}</p>
+            <div key={f.title} className="card border-t-4 border-t-sky-500">
+              <span className="text-xs font-semibold uppercase tracking-wider text-sky-600">
+                {f.tag}
+              </span>
+              <h3 className="mt-2 text-lg font-semibold leading-snug">{f.title}</h3>
+              <p className="mt-2 text-sm text-brand-600">{f.body}</p>
             </div>
           ))}
         </div>

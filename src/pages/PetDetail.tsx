@@ -119,23 +119,32 @@ export default function PetDetail() {
         </div>
 
         <div className="flex flex-col gap-3">
-          <Link to={`/pets/${pet.id}/companion`} className="card transition hover:border-brand-300">
-            <h3 className="font-semibold text-brand-900">🤖 AI Companion</h3>
-            <p className="mt-1 text-sm text-brand-600">
-              Ask anything about {pet.name}, grounded in their records.
-            </p>
+          <Link to={`/pets/${pet.id}/companion`} className="card flex items-center justify-between gap-3 transition hover:border-sky-400">
+            <div>
+              <h3 className="font-semibold text-brand-900">AI Companion</h3>
+              <p className="mt-1 text-sm text-brand-600">
+                Ask anything about {pet.name}, answered from their records.
+              </p>
+            </div>
+            <span className="text-brand-300">→</span>
           </Link>
-          <Link to={`/pets/${pet.id}/vault`} className="card transition hover:border-brand-300">
-            <h3 className="font-semibold text-brand-900">📋 Health Vault</h3>
-            <p className="mt-1 text-sm text-brand-600">
-              Records, vaccinations, and documents.
-            </p>
+          <Link to={`/pets/${pet.id}/vault`} className="card flex items-center justify-between gap-3 transition hover:border-sky-400">
+            <div>
+              <h3 className="font-semibold text-brand-900">Health Vault</h3>
+              <p className="mt-1 text-sm text-brand-600">
+                Vaccinations, vet visits, and documents.
+              </p>
+            </div>
+            <span className="text-brand-300">→</span>
           </Link>
-          <Link to="/membership" className="card transition hover:border-brand-300">
-            <h3 className="font-semibold text-brand-900">⭐ Membership</h3>
-            <p className="mt-1 text-sm text-brand-600">
-              Unlock discounts, AI, and member travel rates.
-            </p>
+          <Link to="/membership" className="card flex items-center justify-between gap-3 transition hover:border-sky-400">
+            <div>
+              <h3 className="font-semibold text-brand-900">Membership</h3>
+              <p className="mt-1 text-sm text-brand-600">
+                Discounts, the AI companion, and member travel rates.
+              </p>
+            </div>
+            <span className="text-brand-300">→</span>
           </Link>
         </div>
       </div>

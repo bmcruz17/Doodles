@@ -79,14 +79,17 @@ export default function AICompanion() {
 
       <div className="flex-1 space-y-4 overflow-y-auto rounded-2xl border border-brand-200 bg-white p-4">
         {messages.length === 0 && (
-          <div className="flex h-full flex-col items-center justify-center text-center text-brand-500">
-            <span className="text-4xl">🤖</span>
-            <p className="mt-2 max-w-sm text-sm">
-              Ask me anything about {pet.name} — coat care, grooming cycles,
-              nutrition, training, or whether something looks normal.
+          <div className="flex h-full flex-col items-center justify-center text-center">
+            <p className="text-base font-semibold text-brand-900">
+              Ask about {pet.name}
             </p>
-            <p className="mt-3 max-w-sm text-xs text-brand-600">
-              I'm an AI assistant and not a substitute for your veterinarian.
+            <p className="mt-2 max-w-sm text-sm text-brand-600">
+              Coat care, grooming cycles, nutrition, training, or whether
+              something looks normal — answered from {pet.name}'s profile and
+              health records.
+            </p>
+            <p className="mt-3 max-w-sm text-xs text-brand-500">
+              Helpful guidance, not a replacement for your veterinarian.
             </p>
           </div>
         )}
