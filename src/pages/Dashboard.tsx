@@ -67,12 +67,13 @@ const BADGE_TONE: Record<Badge['tone'], string> = {
   gray: 'bg-brand-100 text-brand-600',
 }
 
-// Quick-access tiles deep-link into the marketplace category filter.
+// Quick-access tiles deep-link into the marketplace category filter (or, for
+// sitters, the background-checked sitter directory).
 const QUICK = [
-  { key: 'grooming', label: 'Groom' },
-  { key: 'mobile_vet', label: 'Vet' },
-  { key: 'walking', label: 'Walker' },
-  { key: 'sitter', label: 'Sitter' },
+  { key: 'grooming', label: 'Groom', to: '/marketplace?category=grooming' },
+  { key: 'mobile_vet', label: 'Vet', to: '/marketplace?category=mobile_vet' },
+  { key: 'walking', label: 'Walker', to: '/marketplace?category=walking' },
+  { key: 'sitter', label: 'Sitter', to: '/sitters' },
 ]
 
 type UpcomingItem = {
@@ -307,7 +308,7 @@ export default function Dashboard() {
           {QUICK.map((q) => (
             <Link
               key={q.key}
-              to={`/marketplace?category=${q.key}`}
+              to={q.to}
               className="card flex flex-col items-center gap-2 py-4 text-sky-600 transition hover:border-sky-400"
             >
               <CategoryIcon name={q.key} />

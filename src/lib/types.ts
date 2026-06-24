@@ -188,6 +188,34 @@ export type TravelBooking = {
   updated_at: string
 }
 
+export type BackgroundCheckStatus =
+  | 'not_started'
+  | 'consent_given'
+  | 'submitted'
+  | 'in_review'
+  | 'approved'
+  | 'rejected'
+
+export type SitterProfile = {
+  id: string
+  user_id: string
+  display_name: string
+  bio: string
+  location: string | null
+  photo_url: string | null
+  hourly_rate: number | null
+  years_experience: number | null
+  services: string[]
+  background_check_status: BackgroundCheckStatus
+  background_check_consent_at: string | null
+  id_document_url: string | null
+  verified: boolean
+  listed: boolean
+  rating: number | null
+  created_at: string
+  updated_at: string
+}
+
 export type Post = {
   id: string
   author_id: string
@@ -320,6 +348,12 @@ export type Database = {
         Row: PostLike
         Insert: Omit<PostLike, 'created_at'> & { created_at?: string }
         Update: Partial<PostLike>
+        Relationships: []
+      }
+      sitter_profiles: {
+        Row: SitterProfile
+        Insert: Partial<SitterProfile> & { user_id: string }
+        Update: Partial<SitterProfile>
         Relationships: []
       }
     }

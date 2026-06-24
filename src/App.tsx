@@ -16,6 +16,7 @@ import CreatePet from './pages/CreatePet'
 import CreatePetChat from './pages/CreatePetChat'
 import Partner from './pages/Partner'
 import Feed from './pages/Feed'
+import Sitters from './pages/Sitters'
 
 export default function App() {
   const { loading } = useAuth()
@@ -50,6 +51,7 @@ export default function App() {
         <Route path="/pets/:petId/companion" element={<AICompanion />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/partner" element={<Partner />} />
+        <Route path="/sitters" element={<Sitters />} />
         <Route path="/travel" element={<Travel />} />
         <Route path="/membership" element={<Membership />} />
       </Route>

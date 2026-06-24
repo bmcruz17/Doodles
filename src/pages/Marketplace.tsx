@@ -174,16 +174,34 @@ export default function Marketplace() {
         </div>
       )}
 
-      <div className="mt-8 flex flex-col items-center justify-between gap-3 rounded-2xl border border-sky-200 bg-sky-50/60 p-5 text-center sm:flex-row sm:text-left">
-        <div>
-          <h2 className="font-semibold text-brand-900">Are you a pet pro?</h2>
-          <p className="text-sm text-brand-600">
-            List your grooming, walking, sitting or vet services on PackHub — free.
-          </p>
+      <div className="mt-8 grid gap-3 sm:grid-cols-2">
+        <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-sky-200 bg-sky-50/60 p-5">
+          <div>
+            <h2 className="font-semibold text-brand-900">Need a sitter?</h2>
+            <p className="text-sm text-brand-600">
+              Browse background-checked, verified dog sitters near you.
+            </p>
+          </div>
+          <Link to="/sitters" className="btn-primary">
+            Find a sitter
+          </Link>
         </div>
-        <Link to="/partner" className="btn-primary shrink-0">
-          List your business
-        </Link>
+        <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-brand-200 bg-white p-5">
+          <div>
+            <h2 className="font-semibold text-brand-900">Are you a pet pro?</h2>
+            <p className="text-sm text-brand-600">
+              List your grooming, walking or vet services free — or apply to sit dogs.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/partner" className="btn-primary">
+              List your business
+            </Link>
+            <Link to="/sitters" className="btn-ghost">
+              Become a sitter
+            </Link>
+          </div>
+        </div>
       </div>
 
       {booking && (
