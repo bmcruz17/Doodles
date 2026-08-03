@@ -375,6 +375,17 @@ export type Friendship = {
   updated_at: string
 }
 
+export type PackProfile = {
+  id: string
+  user_id: string
+  handle: string
+  display_name: string
+  avatar_url: string | null
+  bio: string
+  created_at: string
+  updated_at: string
+}
+
 export type PostKind = 'member' | 'vendor'
 
 export type Post = {
@@ -394,6 +405,8 @@ export type Post = {
   target_life_stage: LifeStage | null
   link_url: string | null
   cta: string | null
+  pack_handle: string | null
+  pack_avatar: string | null
   created_at: string
 }
 
@@ -518,6 +531,8 @@ export type Database = {
           target_life_stage?: LifeStage | null
           link_url?: string | null
           cta?: string | null
+          pack_handle?: string | null
+          pack_avatar?: string | null
           created_at?: string
         }
         Update: Partial<Post>
@@ -620,6 +635,12 @@ export type Database = {
         Row: { id: string; user_id: string; token: string; platform: string; created_at: string; updated_at: string }
         Insert: { id?: string; user_id: string; token: string; platform?: string }
         Update: Partial<{ token: string; platform: string }>
+        Relationships: []
+      }
+      pack_profiles: {
+        Row: PackProfile
+        Insert: Partial<PackProfile> & { user_id: string; handle: string }
+        Update: Partial<PackProfile>
         Relationships: []
       }
     }

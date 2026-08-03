@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { uploadPostPhoto, extractHashtags } from '../lib/posts'
+import { getMyPack } from '../lib/packProfile'
 import { lifeStage } from '../lib/dog'
-import type { Pet, Post, PostComment } from '../lib/types'
+import type { PackProfile, Pet, Post, PostComment } from '../lib/types'
 
 function timeAgo(iso: string): string {
   const s = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 1000))
@@ -22,6 +23,7 @@ export default function Feed() {
   const { user } = useAuth()
   const [posts, setPosts] = useState<Post[]>([])
   const [pets, setPets] = useState<Pet[]>([])
+  const [pack, setPack] = useState<PackProfile | null>(null)
   const [authorName, setAuthorName] = useState<string>('')
   const [likes, setLikes] = useState<Record<string, number>>({})
   const [likedByMe, setLikedByMe] = useState<Set<string>>(new Set())
@@ -62,10 +64,12 @@ export default function Feed() {
     Promise.all([
       supabase.from('pets').select('*').order('created_at'),
       supabase.from('users').select('name').eq('id', user.id).maybeSingle(),
-    ]).then(([petRes, profRes]) => {
+      getMyPack(user.id),
+    ]).then(([petRes, profRes, myPack]) => {
       setPets(petRes.data ?? [])
       const n = (profRes.data as { name: string | null } | null)?.name
       setAuthorName(n?.trim() || user.email?.split('@')[0] || 'Member')
+      setPack(myPack)
     })
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -119,8 +123,8 @@ export default function Feed() {
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <Link to="/creator" className="btn-ghost text-sm">
-            Creator
+          <Link to={pack ? `/u/${pack.handle}` : '/profile'} className="btn-ghost text-sm">
+            {pack ? 'Profile' : 'Set up'}
           </Link>
           <Link to="/friends" className="btn-ghost text-sm">
             Friends
@@ -128,12 +132,19 @@ export default function Feed() {
         </div>
       </div>
 
-      <Composer
-        userId={user?.id ?? ''}
-        authorName={authorName}
-        pets={pets}
-        onPosted={load}
-      />
+      {pack ? (
+        <Composer pack={pack} pets={pets} onPosted={load} />
+      ) : (
+        <div className="card border-sky-200 bg-sky-50/60 text-center">
+          <p className="text-sm font-semibold text-brand-900">Create your pack profile to post</p>
+          <p className="mt-1 text-sm text-brand-600">
+            One profile for your household — for one dog or your whole pack.
+          </p>
+          <Link to="/profile" className="btn-primary mt-3 inline-flex">
+            Set up your pack
+          </Link>
+        </div>
+      )}
 
       {loading ? (
         <p className="text-brand-600">Loading the feed…</p>
@@ -167,16 +178,15 @@ export default function Feed() {
 
 // --------------------------------------------------------------------------
 function Composer({
-  userId,
-  authorName,
+  pack,
   pets,
   onPosted,
 }: {
-  userId: string
-  authorName: string
+  pack: PackProfile
   pets: Pet[]
   onPosted: () => void
 }) {
+  const userId = pack.user_id
   const [open, setOpen] = useState(false)
   const [petId, setPetId] = useState('')
   const [caption, setCaption] = useState('')
@@ -205,7 +215,9 @@ function Composer({
       const pet = pets.find((p) => p.id === petId)
       const { error: insErr } = await supabase.from('posts').insert({
         author_id: userId,
-        author_name: authorName || 'Member',
+        author_name: pack.display_name || `@${pack.handle}`,
+        pack_handle: pack.handle,
+        pack_avatar: pack.avatar_url,
         pet_id: petId || null,
         pet_name: pet?.name ?? null,
         caption: caption.trim(),
@@ -394,26 +406,35 @@ function PostCard({
   }
 
   const isVendor = post.kind === 'vendor'
-  const headTitle = isVendor
-    ? post.vendor_name || 'Featured'
-    : post.pet_name || post.author_name
-  const initial = (headTitle || '?').charAt(0).toUpperCase()
+  const title = isVendor ? post.vendor_name || 'Featured' : post.author_name || 'A pack'
+  const avatarUrl = isVendor ? null : post.pack_avatar
+  const initial = (title || '?').charAt(0).toUpperCase()
 
   return (
     <article className="card overflow-hidden p-0">
       <div className="flex items-center gap-3 p-4">
-        <div
-          className={`flex h-9 w-9 items-center justify-center rounded-full font-semibold ${
-            isVendor ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'
-          }`}
-        >
-          {initial}
-        </div>
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="" className="h-9 w-9 rounded-full object-cover" />
+        ) : (
+          <div
+            className={`flex h-9 w-9 items-center justify-center rounded-full font-semibold ${
+              isVendor ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'
+            }`}
+          >
+            {initial}
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-brand-900">
-            {headTitle}
+            {isVendor || !post.pack_handle ? (
+              title
+            ) : (
+              <Link to={`/u/${post.pack_handle}`} className="hover:underline">
+                {title}
+              </Link>
+            )}
             {!isVendor && post.pet_name && (
-              <span className="font-normal text-brand-500"> · {post.author_name}</span>
+              <span className="font-normal text-brand-500"> · {post.pet_name}</span>
             )}
           </p>
           <p className="text-xs text-brand-500">

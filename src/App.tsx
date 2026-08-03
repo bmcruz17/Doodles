@@ -27,6 +27,8 @@ import Shop from './pages/Shop'
 import Account from './pages/Account'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
+import PackProfileEdit from './pages/PackProfileEdit'
+import PackProfileView from './pages/PackProfileView'
 
 export default function App() {
   const { loading, user } = useAuth()
@@ -61,6 +63,8 @@ export default function App() {
       >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/feed" element={<Feed />} />
+        <Route path="/profile" element={<PackProfileEdit />} />
+        <Route path="/u/:handle" element={<PackProfileView />} />
         <Route path="/friends" element={<Friends />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/creator" element={<Creator />} />
