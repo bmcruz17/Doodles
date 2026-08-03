@@ -230,6 +230,29 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* One app replaces the junk drawer */}
+      <section className="mx-auto max-w-4xl px-4 pb-2 pt-6">
+        <p className="text-center text-xs font-semibold uppercase tracking-wider text-brand-500">
+          One membership replaces your whole junk drawer of pet apps
+        </p>
+        <div className="mt-4 flex flex-wrap justify-center gap-2 text-sm">
+          {[
+            'AI vet companion',
+            'Health-records vault',
+            'Grooming & mobile vet',
+            'Background-checked sitters',
+            'Premium food & Rx delivery',
+            'Wearable health tracking',
+            'Community feed',
+            'Pet travel',
+          ].map((x) => (
+            <span key={x} className="rounded-full border border-brand-200 bg-white px-3 py-1 text-brand-700">
+              {x}
+            </span>
+          ))}
+        </div>
+      </section>
+
       {/* How it works */}
       <section id="how" className="mx-auto max-w-5xl px-4 py-14">
         <h2 className="text-center text-2xl font-semibold sm:text-3xl">
@@ -283,12 +306,18 @@ export default function Landing() {
             <img src="/doodle.svg" alt="" className="h-6 w-6" />
             <span>{BRAND} — care for every breed</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Link to="/login" className="hover:text-brand-800">
               Log in
             </Link>
             <Link to="/signup" className="hover:text-brand-800">
               Get started
+            </Link>
+            <Link to="/privacy" className="hover:text-brand-800">
+              Privacy
+            </Link>
+            <Link to="/terms" className="hover:text-brand-800">
+              Terms
             </Link>
             <span className="font-mono text-xs text-brand-400">
               {BUILD_VERSION}

@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
+import SitePasscode from './components/SitePasscode'
 import { AuthProvider } from './hooks/useAuth'
 import { supabaseConfigured } from './lib/supabase'
 import { BRAND } from './version'
@@ -37,11 +38,13 @@ if (!supabaseConfigured) {
 } else {
   root.render(
     <StrictMode>
-      <BrowserRouter>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </BrowserRouter>
+      <SitePasscode>
+        <BrowserRouter>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </BrowserRouter>
+      </SitePasscode>
     </StrictMode>,
   )
 }

@@ -604,6 +604,18 @@ export type Database = {
         Update: Partial<ShopSubscription>
         Relationships: []
       }
+      waitlist: {
+        Row: { id: string; email: string; name: string | null; source: string; created_at: string }
+        Insert: { id?: string; email: string; name?: string | null; source?: string; created_at?: string }
+        Update: Partial<{ email: string; name: string | null; source: string }>
+        Relationships: []
+      }
+      feedback: {
+        Row: { id: string; user_id: string | null; email: string | null; message: string; context: string | null; created_at: string }
+        Insert: { id?: string; user_id?: string | null; email?: string | null; message: string; context?: string | null; created_at?: string }
+        Update: Partial<{ message: string; context: string | null }>
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

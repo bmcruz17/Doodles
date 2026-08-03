@@ -162,6 +162,11 @@ export function tractiveSync(petId: string, email?: string, password?: string) {
   })
 }
 
+/** Permanently delete the signed-in user's account and data. */
+export function deleteAccount() {
+  return invoke<{ ok: boolean }>('delete-account', {})
+}
+
 export function adminOverview() {
   return invoke<AdminOverview>('admin', { action: 'overview' })
 }

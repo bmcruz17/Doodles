@@ -22,6 +22,9 @@ import Admin from './pages/Admin'
 import Creator from './pages/Creator'
 import WearableHealth from './pages/WearableHealth'
 import Shop from './pages/Shop'
+import Account from './pages/Account'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
 
 export default function App() {
   const { loading } = useAuth()
@@ -39,6 +42,8 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
 
       <Route
         element={
@@ -64,6 +69,7 @@ export default function App() {
         <Route path="/sitters" element={<Sitters />} />
         <Route path="/travel" element={<Travel />} />
         <Route path="/membership" element={<Membership />} />
+        <Route path="/account" element={<Account />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

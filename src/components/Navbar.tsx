@@ -87,9 +87,10 @@ export default function Navbar() {
           >
             {BUILD_VERSION}
           </span>
-          <span className="hidden text-sm text-brand-600 md:inline">
-            {user?.email}
-          </span>
+          <NavLink to="/account" className="text-sm text-brand-600 hover:text-brand-900">
+            <span className="hidden md:inline">{user?.email}</span>
+            <span className="md:hidden">Account</span>
+          </NavLink>
           <button onClick={handleSignOut} className="btn-ghost text-sm">
             Sign out
           </button>
