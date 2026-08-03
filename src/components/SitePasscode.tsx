@@ -42,7 +42,7 @@ export default function SitePasscode({ children }: { children: React.ReactNode }
         style={{ background: 'radial-gradient(60% 40% at 50% 0%, rgba(242,176,74,0.12) 0%, rgba(0,0,0,0) 70%)' }} />
 
       <div className="relative w-full max-w-sm rounded-3xl border border-white/10 bg-white/[0.04] p-8 text-center shadow-2xl backdrop-blur-sm">
-        <img src="/doodle.svg" alt="" className="mx-auto h-20 w-20 drop-shadow-lg" />
+        <img src="/doodle.svg?v=crest2" alt="" className="mx-auto h-20 w-20 drop-shadow-lg" />
         <h1 className="mt-4 text-xl font-semibold text-white">{BRAND} — private beta</h1>
         <p className="mt-1.5 text-sm text-slate-300">
           We're in closed testing. Enter your invite passcode to continue.

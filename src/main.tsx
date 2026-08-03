@@ -16,7 +16,7 @@ if (!supabaseConfigured) {
   root.render(
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="card max-w-md text-center">
-        <img src="/doodle.svg" alt="" className="mx-auto mb-4 h-14 w-14" />
+        <img src="/doodle.svg?v=crest2" alt="" className="mx-auto mb-4 h-14 w-14" />
         <h1 className="text-xl font-semibold text-brand-900">
           {BRAND} is deployed 🎉
         </h1>

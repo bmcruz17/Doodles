@@ -29,7 +29,7 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2">
-          <img src="/doodle.svg" alt={BRAND} className="h-12 w-12" />
+          <img src="/doodle.svg?v=crest2" alt={BRAND} className="h-12 w-12" />
           <h1 className="text-2xl font-semibold text-brand-900">Welcome back</h1>
           <p className="text-sm text-brand-600">Sign in to your {BRAND} account</p>
         </div>

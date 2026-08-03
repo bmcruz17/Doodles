@@ -171,7 +171,7 @@ export default function Dashboard() {
     return (
       <div className="mx-auto max-w-md text-center">
         <div className="card">
-          <img src="/doodle.svg" alt="" className="mx-auto mb-4 h-16 w-16" />
+          <img src="/doodle.svg?v=crest2" alt="" className="mx-auto mb-4 h-16 w-16" />
           <h1 className="text-xl font-semibold text-brand-900">
             Welcome to {BRAND}!
           </h1>

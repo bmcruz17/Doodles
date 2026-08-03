@@ -37,7 +37,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-20 border-b border-brand-200 bg-brand-50/80 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
         <Link to="/feed" className="flex items-center gap-2">
-          <img src="/doodle.svg" alt={BRAND} className="h-8 w-8" />
+          <img src="/doodle.svg?v=crest2" alt={BRAND} className="h-8 w-8" />
           <span className="text-lg font-semibold tracking-tight text-brand-900">
             {BRAND}
           </span>

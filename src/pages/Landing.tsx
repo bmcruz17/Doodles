@@ -83,7 +83,7 @@ export default function Landing() {
       <header className="sticky top-0 z-20 border-b border-brand-200/60 bg-brand-50/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
           <Link to="/" className="flex items-center gap-2">
-            <img src="/doodle.svg" alt={BRAND} className="h-8 w-8" />
+            <img src="/doodle.svg?v=crest2" alt={BRAND} className="h-8 w-8" />
             <span className="text-lg font-semibold tracking-tight">{BRAND}</span>
           </Link>
           <div className="ml-auto flex items-center gap-2">
@@ -303,7 +303,7 @@ export default function Landing() {
       <footer className="border-t border-brand-200/60">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-brand-500 sm:flex-row">
           <div className="flex items-center gap-2">
-            <img src="/doodle.svg" alt="" className="h-6 w-6" />
+            <img src="/doodle.svg?v=crest2" alt="" className="h-6 w-6" />
             <span>{BRAND} — care for every breed</span>
           </div>
           <div className="flex flex-wrap items-center gap-4">
