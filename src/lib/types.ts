@@ -223,6 +223,55 @@ export type SitterProfile = {
   updated_at: string
 }
 
+export type ProductCategory =
+  | 'food'
+  | 'treats'
+  | 'supplements'
+  | 'pharmacy'
+  | 'supplies'
+  | 'other'
+
+export type Product = {
+  id: string
+  brand: string
+  name: string
+  category: ProductCategory
+  description: string
+  image_url: string | null
+  price: number
+  subscribe_price: number | null
+  unit: string | null
+  rx_required: boolean
+  in_stock: boolean
+  active: boolean
+  created_at: string
+}
+
+export type ShopOrder = {
+  id: string
+  user_id: string
+  items: { product_id: string; brand: string; name: string; qty: number; price: number }[]
+  subtotal: number
+  status: 'placed' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+  ship_name: string | null
+  ship_address: string | null
+  has_rx_items: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type ShopSubscription = {
+  id: string
+  user_id: string
+  product_id: string
+  qty: number
+  interval_weeks: number
+  next_ship: string | null
+  status: 'active' | 'paused' | 'cancelled'
+  created_at: string
+  updated_at: string
+}
+
 export type Device = {
   id: string
   pet_id: string
@@ -535,6 +584,24 @@ export type Database = {
         Row: DeviceAlert
         Insert: Partial<DeviceAlert> & { pet_id: string; title: string }
         Update: Partial<DeviceAlert>
+        Relationships: []
+      }
+      products: {
+        Row: Product
+        Insert: Partial<Product> & { brand: string; name: string; category: ProductCategory }
+        Update: Partial<Product>
+        Relationships: []
+      }
+      shop_orders: {
+        Row: ShopOrder
+        Insert: Partial<Omit<ShopOrder, 'items'>> & { user_id: string; items?: unknown }
+        Update: Partial<Omit<ShopOrder, 'items'>> & { items?: unknown }
+        Relationships: []
+      }
+      shop_subscriptions: {
+        Row: ShopSubscription
+        Insert: Partial<ShopSubscription> & { user_id: string; product_id: string }
+        Update: Partial<ShopSubscription>
         Relationships: []
       }
     }

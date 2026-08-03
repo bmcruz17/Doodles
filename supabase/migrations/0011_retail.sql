@@ -1,0 +1,6 @@
+-- 0011_retail.sql
+-- Retail side of PackHub: product catalog, orders, auto-ship subscriptions.
+-- Products managed by ops (service role only — no authenticated write policy);
+-- customers read the active catalog and own their orders/subscriptions.
+-- (Full DDL + seed applied via migration "retail"; see repo history.)
+-- Tables: products, shop_orders, shop_subscriptions (RLS owner-scoped).

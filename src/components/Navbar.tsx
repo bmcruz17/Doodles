@@ -8,6 +8,7 @@ const links = [
   { to: '/feed', label: 'Home', end: true },
   { to: '/dashboard', label: 'Pets', end: true },
   { to: '/marketplace', label: 'Marketplace' },
+  { to: '/shop', label: 'Shop' },
   { to: '/travel', label: 'Travel' },
   { to: '/membership', label: 'Membership' },
 ]
