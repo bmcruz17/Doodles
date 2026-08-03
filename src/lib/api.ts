@@ -135,6 +135,10 @@ export interface AdminOverview {
     by_kind: Record<string, number>
     list: { id: string; name: string; kind: string; provider: string; last_seen_at: string | null; created_at: string }[]
   }
+  waitlist: {
+    total: number
+    list: { id: string; email: string; name: string | null; source: string; created_at: string }[]
+  }
 }
 
 export interface DeviceInsights {

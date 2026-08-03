@@ -5,7 +5,9 @@ import {
   type AdminOverview,
 } from '../lib/api'
 
-type Board = 'vendors' | 'bookings' | 'sitters' | 'audience' | 'wearables'
+type Board = 'vendors' | 'bookings' | 'sitters' | 'audience' | 'wearables' | 'waitlist'
+
+const FOUNDING_CAP = 100
 
 function money(n: number): string {
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
@@ -83,8 +85,8 @@ export default function Admin() {
       </div>
 
       {/* Board switcher */}
-      <div className="flex gap-2">
-        {(['vendors', 'bookings', 'sitters', 'audience', 'wearables'] as Board[]).map((b) => (
+      <div className="flex flex-wrap gap-2">
+        {(['vendors', 'bookings', 'sitters', 'audience', 'wearables', 'waitlist'] as Board[]).map((b) => (
           <button
             key={b}
             onClick={() => setBoard(b)}
@@ -94,7 +96,7 @@ export default function Admin() {
                 : 'border border-brand-200 bg-white text-brand-700 hover:border-sky-400'
             }`}
           >
-            {b}
+            {b === 'waitlist' ? 'Pawthers' : b}
           </button>
         ))}
       </div>
@@ -167,6 +169,86 @@ export default function Admin() {
             </Card>
           ) }))}
         />
+      )}
+
+      {board === 'waitlist' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Metric label="Signups" value={data.waitlist.total} />
+            <Metric
+              label="Founding Pawthers"
+              value={`${Math.min(data.waitlist.total, FOUNDING_CAP)}/${FOUNDING_CAP}`}
+              accent
+            />
+            <Metric label="Spots left" value={Math.max(0, FOUNDING_CAP - data.waitlist.total)} />
+          </div>
+          <div className="card border-amber-200 bg-amber-50/60">
+            <p className="text-sm text-brand-700">
+              The first {FOUNDING_CAP} signups are the <strong>Founding Pawthers</strong> —
+              your closed-beta cohort. List is oldest-first, so #1 is your very first.
+            </p>
+          </div>
+          {data.waitlist.list.length === 0 ? (
+            <p className="text-sm text-brand-500">No signups yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="text-xs uppercase tracking-wide text-brand-500">
+                  <tr>
+                    <th className="py-2 pr-3">#</th>
+                    <th className="py-2 pr-3">Email</th>
+                    <th className="py-2 pr-3">Source</th>
+                    <th className="py-2 pr-3">Joined</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.waitlist.list.map((w, i) => {
+                    const founding = i < FOUNDING_CAP
+                    return (
+                      <tr key={w.id} className="border-t border-brand-100">
+                        <td className="py-2 pr-3">
+                          <span
+                            className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-semibold ${
+                              founding ? 'bg-amber-100 text-amber-700' : 'bg-brand-100 text-brand-500'
+                            }`}
+                            title={founding ? `Founding Pawther #${i + 1}` : `#${i + 1}`}
+                          >
+                            {founding ? `🐾${i + 1}` : i + 1}
+                          </span>
+                        </td>
+                        <td className="py-2 pr-3 text-brand-800">{w.email}</td>
+                        <td className="py-2 pr-3 text-brand-500">{w.source}</td>
+                        <td className="py-2 pr-3 text-brand-500">
+                          {new Date(w.created_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <button
+            onClick={() => {
+              const csv = [
+                'position,email,source,joined,founding_pawther',
+                ...data.waitlist.list.map(
+                  (w, i) =>
+                    `${i + 1},${w.email},${w.source},${w.created_at},${i < FOUNDING_CAP ? 'yes' : 'no'}`,
+                ),
+              ].join('\n')
+              const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+              const a = document.createElement('a')
+              a.href = url
+              a.download = 'packhub-waitlist.csv'
+              a.click()
+              URL.revokeObjectURL(url)
+            }}
+            className="btn-ghost text-sm"
+          >
+            Export CSV
+          </button>
+        </div>
       )}
 
       {board === 'wearables' && (

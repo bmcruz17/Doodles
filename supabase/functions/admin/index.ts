@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     }
 
     // ---- overview ----
-    const [usersC, petsC, vendors, bookings, sitters, pets, devicesRes, dailyCount] = await Promise.all([
+    const [usersC, petsC, vendors, bookings, sitters, pets, devicesRes, dailyCount, waitlistRes] = await Promise.all([
       admin.from('users').select('id', { count: 'exact', head: true }),
       admin.from('pets').select('id', { count: 'exact', head: true }),
       admin
@@ -92,6 +92,7 @@ Deno.serve(async (req) => {
       admin.from('pets').select('breed, birthdate, sex, neutered').limit(5000),
       admin.from('devices').select('id, name, kind, provider, last_seen_at, created_at').order('created_at', { ascending: false }),
       admin.from('device_daily').select('id', { count: 'exact', head: true }),
+      admin.from('waitlist').select('id, email, name, source, created_at').order('created_at', { ascending: true }).limit(1000),
     ])
 
     // Aggregate the audience — the targetable data asset (never per-individual).
@@ -158,6 +159,11 @@ Deno.serve(async (req) => {
           return o
         }, {}),
         list: (devicesRes.data ?? []).slice(0, 50),
+      },
+      waitlist: {
+        total: (waitlistRes.data ?? []).length,
+        // Oldest first — index 0 is Founding Pawther #1.
+        list: (waitlistRes.data ?? []).slice(0, 300),
       },
     })
   } catch (err) {
