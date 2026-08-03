@@ -7,7 +7,9 @@ import { BRAND } from '../version'
 // Store requires the privacy policy URL to load without a login/gate.
 const PUBLIC_PATHS = ['/privacy', '/terms']
 
-// Beta wall shown before anything else until the passcode is entered.
+const PAW =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 24 24' fill='%23e7e1d4'%3E%3Ccircle cx='7' cy='9' r='1.7'/%3E%3Ccircle cx='11' cy='6.5' r='1.7'/%3E%3Ccircle cx='15.5' cy='7.5' r='1.7'/%3E%3Cpath d='M12 12c-2.6 0-4.7 1.9-4.7 4 0 1.6 1.3 2.4 2.8 2.4.9 0 1.3-.3 1.9-.3s1 .3 1.9.3c1.5 0 2.8-.8 2.8-2.4 0-2.1-2.1-4-4.7-4Z'/%3E%3C/svg%3E\")"
+
 export default function SitePasscode({ children }: { children: React.ReactNode }) {
   const [ok, setOk] = useState(isUnlocked())
   const [code, setCode] = useState('')
@@ -26,31 +28,30 @@ export default function SitePasscode({ children }: { children: React.ReactNode }
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4"
-      style={{ background: 'linear-gradient(160deg,#17273d 0%,#0b1524 100%)' }}>
-      {/* subtle gold paw pattern */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.05]"
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 24 24' fill='%23f2b04a'%3E%3Ccircle cx='7' cy='9' r='1.8'/%3E%3Ccircle cx='11' cy='6.5' r='1.8'/%3E%3Ccircle cx='15.5' cy='7.5' r='1.8'/%3E%3Cpath d='M12 12c-2.6 0-4.7 1.9-4.7 4 0 1.6 1.3 2.4 2.8 2.4.9 0 1.3-.3 1.9-.3s1 .3 1.9.3c1.5 0 2.8-.8 2.8-2.4 0-2.1-2.1-4-4.7-4Z'/%3E%3C/svg%3E\")",
-          backgroundSize: '92px 92px',
-        }}
-      />
-      {/* top glow */}
+    <div className="relative flex min-h-screen items-center justify-center px-4 py-10"
+      style={{ background: '#f4f1ea' }}>
       <div className="pointer-events-none absolute inset-0"
-        style={{ background: 'radial-gradient(60% 40% at 50% 0%, rgba(242,176,74,0.12) 0%, rgba(0,0,0,0) 70%)' }} />
+        style={{ backgroundImage: PAW, backgroundSize: '104px 104px', opacity: 0.4 }} />
 
-      <div className="relative w-full max-w-sm rounded-3xl border border-white/10 bg-white/[0.04] p-8 text-center shadow-2xl backdrop-blur-sm">
-        <img src="/doodle.svg?v=crest2" alt="" className="mx-auto h-20 w-20 drop-shadow-lg" />
-        <h1 className="mt-4 text-xl font-semibold text-white">{BRAND} — private beta</h1>
-        <p className="mt-1.5 text-sm text-slate-300">
+      <div className="relative w-full max-w-sm rounded-3xl border border-[#ece5d8] bg-white p-9 text-center"
+        style={{ boxShadow: '0 20px 50px -12px rgba(23,39,61,0.18)' }}>
+        <img
+          src="/doodle.svg?v=crest2"
+          alt=""
+          className="mx-auto h-[76px] w-[76px] rounded-[18px]"
+          style={{ boxShadow: '0 8px 20px -6px rgba(23,39,61,0.35)' }}
+        />
+        <p className="mt-5 text-xs font-bold uppercase tracking-[0.14em] text-[#c69022]">
+          Private beta
+        </p>
+        <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-[#182a44]">{BRAND}</h1>
+        <p className="mx-auto mt-2.5 max-w-[16rem] text-sm leading-relaxed text-[#6b7688]">
           We're in closed testing. Enter your invite passcode to continue.
         </p>
 
         <form onSubmit={submit} className="mt-6 space-y-3">
           <input
-            className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-center text-white placeholder:text-slate-400 focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+            className="w-full rounded-xl border-[1.5px] border-[#e4ddcf] bg-[#fbfaf7] px-4 py-3.5 text-center text-[#182a44] placeholder:text-[#9aa3b2] focus:border-[#182a44] focus:outline-none focus:ring-2 focus:ring-[#182a44]/15"
             value={code}
             onChange={(e) => {
               setCode(e.target.value)
@@ -59,11 +60,10 @@ export default function SitePasscode({ children }: { children: React.ReactNode }
             placeholder="Invite passcode"
             autoFocus
           />
-          {error && <p className="text-sm text-red-400">That passcode didn't work.</p>}
+          {error && <p className="text-sm text-red-500">That passcode didn't work.</p>}
           <button
             type="submit"
-            className="w-full rounded-xl px-4 py-3 font-semibold text-[#12203a] shadow-lg transition hover:brightness-105"
-            style={{ background: 'linear-gradient(180deg,#ffdd93 0%,#e8a032 100%)' }}
+            className="w-full rounded-xl bg-[#182a44] px-4 py-3.5 font-semibold text-white transition hover:bg-[#22375a]"
           >
             Enter
           </button>
@@ -71,9 +71,9 @@ export default function SitePasscode({ children }: { children: React.ReactNode }
 
         <Waitlist />
 
-        <div className="mt-5 flex justify-center gap-4 text-xs text-slate-400">
-          <a href="/privacy" className="hover:text-slate-200">Privacy</a>
-          <a href="/terms" className="hover:text-slate-200">Terms</a>
+        <div className="mt-5 flex justify-center gap-4 border-t border-[#f0ece2] pt-4 text-xs text-[#9aa3b2]">
+          <a href="/privacy" className="hover:text-[#6b7688]">Privacy</a>
+          <a href="/terms" className="hover:text-[#6b7688]">Terms</a>
         </div>
       </div>
     </div>
@@ -99,11 +99,11 @@ function Waitlist() {
   }
 
   if (done) {
-    return <p className="mt-5 text-sm text-amber-300">You're on the list — we'll be in touch! 🐾</p>
+    return <p className="mt-5 text-sm font-medium text-emerald-600">You're on the list — we'll be in touch! 🐾</p>
   }
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="mt-5 text-sm font-medium text-amber-300 hover:text-amber-200">
+      <button onClick={() => setOpen(true)} className="mt-5 text-sm font-semibold text-[#1f5fa6] hover:text-[#184b83]">
         Not invited yet? Join the waitlist →
       </button>
     )
@@ -113,13 +113,13 @@ function Waitlist() {
       <input
         type="email"
         required
-        className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-white placeholder:text-slate-400 focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+        className="w-full rounded-xl border-[1.5px] border-[#e4ddcf] bg-[#fbfaf7] px-3 py-2.5 text-[#182a44] placeholder:text-[#9aa3b2] focus:border-[#182a44] focus:outline-none focus:ring-2 focus:ring-[#182a44]/15"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="you@email.com"
       />
       <button type="submit" disabled={busy}
-        className="shrink-0 rounded-xl border border-amber-400/40 px-3 text-sm font-medium text-amber-300 hover:bg-amber-400/10">
+        className="shrink-0 rounded-xl bg-[#182a44] px-4 text-sm font-semibold text-white hover:bg-[#22375a] disabled:opacity-50">
         {busy ? '…' : 'Join'}
       </button>
     </form>
