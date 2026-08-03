@@ -33,6 +33,31 @@ npm run cap:ios        # build, sync, open Xcode
 npm run cap:android    # build, sync, open Android Studio
 ```
 
+## Push notifications
+
+`@capacitor/push-notifications` is installed and wired: on the native app, once a
+user signs in, `registerPush()` (src/lib/push.ts) requests permission, registers
+with APNs/FCM, and upserts the device token into the `push_tokens` table. It's a
+no-op on the web build.
+
+To finish enabling push (on your Mac / in the consoles):
+
+**iOS**
+1. In the Apple Developer portal, create an **APNs Auth Key (.p8)**.
+2. In Xcode: target → Signing & Capabilities → add **Push Notifications** +
+   **Background Modes → Remote notifications**.
+3. Upload the APNs key to your push provider (or Firebase, if you route iOS
+   through FCM).
+
+**Android**
+1. Create a Firebase project; add the Android app; download
+   **`google-services.json`** into `android/app/`.
+2. Capacitor's FCM wiring is automatic once the file is present.
+
+**Sending** pushes needs a small backend sender (an Edge Function calling FCM/
+APNs with your server key) — not built yet; the tokens are already being
+collected so it's ready to add.
+
 ## Notes
 
 - `ios/` and `android/` are generated native projects — they're gitignored by

@@ -616,6 +616,12 @@ export type Database = {
         Update: Partial<{ message: string; context: string | null }>
         Relationships: []
       }
+      push_tokens: {
+        Row: { id: string; user_id: string; token: string; platform: string; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; token: string; platform?: string }
+        Update: Partial<{ token: string; platform: string }>
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

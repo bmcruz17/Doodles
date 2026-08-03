@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
+import { registerPush } from './lib/push'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 import Landing from './pages/Landing'
@@ -27,7 +29,12 @@ import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
 
 export default function App() {
-  const { loading } = useAuth()
+  const { loading, user } = useAuth()
+
+  // Register for push notifications on the native app once signed in (no-op on web).
+  useEffect(() => {
+    if (user) registerPush(user.id)
+  }, [user])
 
   if (loading) {
     return (
