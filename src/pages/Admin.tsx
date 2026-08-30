@@ -4,10 +4,9 @@ import {
   adminAction,
   type AdminOverview,
 } from '../lib/api'
+import { FOUNDING_CAP, foundingStats, type FoundingStats } from '../lib/founding'
 
 type Board = 'vendors' | 'bookings' | 'sitters' | 'audience' | 'wearables' | 'waitlist'
-
-const FOUNDING_CAP = 100
 
 function money(n: number): string {
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
@@ -18,12 +17,16 @@ export default function Admin() {
   const [state, setState] = useState<'loading' | 'ok' | 'denied' | 'error'>('loading')
   const [board, setBoard] = useState<Board>('vendors')
   const [working, setWorking] = useState<string | null>(null)
+  const [founding, setFounding] = useState<FoundingStats | null>(null)
 
   async function load() {
     try {
       const res = await adminOverview()
       setData(res)
       setState('ok')
+      foundingStats()
+        .then(setFounding)
+        .catch(() => {})
     } catch (err) {
       const m = err instanceof Error ? err.message : ''
       setState(/forbidden|403/i.test(m) ? 'denied' : 'error')
@@ -174,18 +177,23 @@ export default function Admin() {
       {board === 'waitlist' && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Metric label="Signups" value={data.waitlist.total} />
+            <Metric label="Waitlist signups" value={data.waitlist.total} />
             <Metric
-              label="Founding Pawthers"
-              value={`${Math.min(data.waitlist.total, FOUNDING_CAP)}/${FOUNDING_CAP}`}
+              label="Founding spots claimed"
+              value={`${founding?.claimed ?? 0}/${founding?.cap ?? FOUNDING_CAP}`}
               accent
             />
-            <Metric label="Spots left" value={Math.max(0, FOUNDING_CAP - data.waitlist.total)} />
+            <Metric
+              label="Spots left"
+              value={Math.max(0, (founding?.cap ?? FOUNDING_CAP) - (founding?.claimed ?? 0))}
+            />
           </div>
           <div className="card border-amber-200 bg-amber-50/60">
             <p className="text-sm text-brand-700">
-              The first {FOUNDING_CAP} signups are the <strong>Founding Pawthers</strong> —
-              your closed-beta cohort. List is oldest-first, so #1 is your very first.
+              A <strong>Founding Pawther</strong> number is assigned when someone
+              actually creates an account — the first {FOUNDING_CAP} to do so.
+              The list below is everyone who left an email without signing up
+              yet, oldest first; invite from the top.
             </p>
           </div>
           {data.waitlist.list.length === 0 ? (
@@ -203,17 +211,14 @@ export default function Admin() {
                 </thead>
                 <tbody>
                   {data.waitlist.list.map((w, i) => {
-                    const founding = i < FOUNDING_CAP
                     return (
                       <tr key={w.id} className="border-t border-brand-100">
                         <td className="py-2 pr-3">
                           <span
-                            className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-semibold ${
-                              founding ? 'bg-amber-100 text-amber-700' : 'bg-brand-100 text-brand-500'
-                            }`}
-                            title={founding ? `Founding Pawther #${i + 1}` : `#${i + 1}`}
+                            className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-100 px-1.5 text-xs font-semibold text-brand-600"
+                            title={`Waitlist position #${i + 1}`}
                           >
-                            {founding ? `🐾${i + 1}` : i + 1}
+                            {i + 1}
                           </span>
                         </td>
                         <td className="py-2 pr-3 text-brand-800">{w.email}</td>
@@ -231,10 +236,9 @@ export default function Admin() {
           <button
             onClick={() => {
               const csv = [
-                'position,email,source,joined,founding_pawther',
+                'position,email,source,joined',
                 ...data.waitlist.list.map(
-                  (w, i) =>
-                    `${i + 1},${w.email},${w.source},${w.created_at},${i < FOUNDING_CAP ? 'yes' : 'no'}`,
+                  (w, i) => `${i + 1},${w.email},${w.source},${w.created_at}`,
                 ),
               ].join('\n')
               const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))

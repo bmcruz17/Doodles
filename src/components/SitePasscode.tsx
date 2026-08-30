@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { isUnlocked, unlock } from '../lib/gate'
-import { supabase } from '../lib/supabase'
+import JoinWaitlist from './JoinWaitlist'
 import { BRAND } from '../version'
 
 // Paths that must stay publicly reachable even behind the beta wall — the App
@@ -69,7 +69,7 @@ export default function SitePasscode({ children }: { children: React.ReactNode }
           </button>
         </form>
 
-        <Waitlist />
+        <GateWaitlist />
 
         <div className="mt-5 flex justify-center gap-4 border-t border-[#f0ece2] pt-4 text-xs text-[#9aa3b2]">
           <a href="/privacy" className="hover:text-[#6b7688]">Privacy</a>
@@ -80,48 +80,19 @@ export default function SitePasscode({ children }: { children: React.ReactNode }
   )
 }
 
-function Waitlist() {
+/** The gate's own waitlist affordance, wrapping the shared capture form. */
+function GateWaitlist() {
   const [open, setOpen] = useState(false)
-  const [email, setEmail] = useState('')
-  const [done, setDone] = useState(false)
-  const [busy, setBusy] = useState(false)
 
-  async function join(e: React.FormEvent) {
-    e.preventDefault()
-    if (!email.trim()) return
-    setBusy(true)
-    try {
-      await supabase.from('waitlist').insert({ email: email.trim(), source: 'gate' })
-      setDone(true)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  if (done) {
-    return <p className="mt-5 text-sm font-medium text-emerald-600">You're on the list — we'll be in touch! 🐾</p>
-  }
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="mt-5 text-sm font-semibold text-[#1f5fa6] hover:text-[#184b83]">
+      <button
+        onClick={() => setOpen(true)}
+        className="mt-5 text-sm font-semibold text-[#1f5fa6] hover:text-[#184b83]"
+      >
         Not invited yet? Join the waitlist →
       </button>
     )
   }
-  return (
-    <form onSubmit={join} className="mt-5 flex gap-2">
-      <input
-        type="email"
-        required
-        className="w-full rounded-xl border-[1.5px] border-[#e4ddcf] bg-[#fbfaf7] px-3 py-2.5 text-[#182a44] placeholder:text-[#9aa3b2] focus:border-[#182a44] focus:outline-none focus:ring-2 focus:ring-[#182a44]/15"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="you@email.com"
-      />
-      <button type="submit" disabled={busy}
-        className="shrink-0 rounded-xl bg-[#182a44] px-4 text-sm font-semibold text-white hover:bg-[#22375a] disabled:opacity-50">
-        {busy ? '…' : 'Join'}
-      </button>
-    </form>
-  )
+  return <JoinWaitlist source="gate" variant="gate" compact />
 }

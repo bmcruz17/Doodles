@@ -8,6 +8,7 @@ import {
 } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { claimFoundingSpot } from '../lib/founding'
 
 interface AuthContextValue {
   session: Session | null
@@ -36,6 +37,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => sub.subscription.unsubscribe()
   }, [])
+
+  // Reserve this member's Founding Pawther number. The RPC is idempotent and
+  // capped server-side, so running it once per signed-in session is cheap and
+  // also back-fills anyone who signed up before founding spots existed. A
+  // failure here must never block the app.
+  const userId = session?.user.id
+  useEffect(() => {
+    if (!userId) return
+    claimFoundingSpot().catch(() => {})
+  }, [userId])
 
   const value = useMemo<AuthContextValue>(
     () => ({

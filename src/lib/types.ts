@@ -61,6 +61,13 @@ export type UserProfile = {
   membership_tier: MembershipTier | null
   stripe_customer_id: string | null
   is_admin: boolean
+  /** Founding Pawther (first 100 beta members). Server-assigned — see 0015. */
+  founding_member: boolean
+  founding_number: number | null
+  founding_since: string | null
+  /** Grandfathered prices in cents, frozen when the spot was claimed. */
+  founding_rate_basic_cents: number | null
+  founding_rate_premium_cents: number | null
   created_at: string
   updated_at: string
 }
@@ -486,7 +493,17 @@ export type Database = {
         Row: Service
         Insert: Partial<Service> & { vendor_id: string; title: string }
         Update: Partial<Service>
-        Relationships: []
+        // Declared so `vendors.select('*, services(*)')` infers Service[]
+        // rather than a SelectQueryError.
+        Relationships: [
+          {
+            foreignKeyName: 'services_vendor_id_fkey'
+            columns: ['vendor_id']
+            isOneToOne: false
+            referencedRelation: 'vendors'
+            referencedColumns: ['id']
+          },
+        ]
       }
       bookings: {
         Row: Booking
@@ -620,9 +637,34 @@ export type Database = {
         Relationships: []
       }
       waitlist: {
-        Row: { id: string; email: string; name: string | null; source: string; created_at: string }
-        Insert: { id?: string; email: string; name?: string | null; source?: string; created_at?: string }
-        Update: Partial<{ email: string; name: string | null; source: string }>
+        Row: {
+          id: string
+          email: string
+          name: string | null
+          dog_name: string | null
+          zip: string | null
+          ref: string | null
+          source: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          name?: string | null
+          dog_name?: string | null
+          zip?: string | null
+          ref?: string | null
+          source?: string
+          created_at?: string
+        }
+        Update: Partial<{
+          email: string
+          name: string | null
+          dog_name: string | null
+          zip: string | null
+          ref: string | null
+          source: string
+        }>
         Relationships: []
       }
       feedback: {
@@ -645,7 +687,24 @@ export type Database = {
       }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      /** Public founding-spot counter for the landing page (aggregates only). */
+      founding_stats: {
+        Args: Record<string, never>
+        Returns: { cap: number; claimed: number; waiting: number }
+      }
+      /** Reserve the caller's Founding Pawther number. Idempotent, capped. */
+      claim_founding_spot: {
+        Args: Record<string, never>
+        Returns: {
+          founding: boolean
+          number: number | null
+          cap: number
+          claimed: number
+          full: boolean
+        }
+      }
+    }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
   }

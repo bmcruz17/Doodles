@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { createCheckout } from '../lib/api'
+import {
+  BETA_FREE,
+  FOUNDING_CAP,
+  formatCents,
+  myFounding,
+} from '../lib/founding'
 import type { MembershipTier, Pet, Subscription } from '../lib/types'
+
+type Founding = Awaited<ReturnType<typeof myFounding>>
 
 const TIERS: {
   tier: MembershipTier
@@ -35,6 +43,7 @@ export default function Membership() {
   const [petId, setPetId] = useState<string>('')
   const [busyTier, setBusyTier] = useState<MembershipTier | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [founding, setFounding] = useState<Founding>(null)
 
   useEffect(() => {
     let active = true
@@ -48,6 +57,9 @@ export default function Membership() {
       setSubs(subRes.data ?? [])
       if (ps.length) setPetId(ps[0].id)
     })
+    myFounding()
+      .then((f) => active && setFounding(f))
+      .catch(() => {})
     return () => {
       active = false
     }
@@ -60,6 +72,7 @@ export default function Membership() {
   }
 
   async function subscribe(tier: MembershipTier) {
+    if (BETA_FREE) return
     if (!petId) {
       setError('Add a pet first — membership is per pet.')
       return
@@ -87,7 +100,8 @@ export default function Membership() {
       <h1 className="text-2xl font-semibold text-brand-900">Membership</h1>
       <p className="mt-1 max-w-2xl text-sm text-brand-600">
         One membership per pet unlocks the AI companion, health vault,
-        marketplace discounts, and member travel rates.
+        marketplace discounts, and member travel rates. Everything is free
+        during the closed beta — nothing is charged yet.
       </p>
 
       {pets.length > 0 && (
@@ -117,6 +131,38 @@ export default function Membership() {
         </div>
       )}
 
+      {founding?.founding_member && (
+        <div className="card mt-4 border-sun-300 bg-gradient-to-br from-sun-50 to-brand-50">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded-full bg-sun-500 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
+              Founding Pawther #{founding.founding_number}
+            </span>
+            <span className="text-sm font-semibold text-brand-800">
+              One of the first {FOUNDING_CAP}.
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-brand-700">
+            Membership is <strong>free for you through the beta</strong>. When
+            billing starts, your locked founding rate is{' '}
+            {founding.founding_rate_basic_cents != null && (
+              <strong>
+                {formatCents(founding.founding_rate_basic_cents)}/mo basic
+              </strong>
+            )}
+            {founding.founding_rate_premium_cents != null && (
+              <>
+                {' '}or{' '}
+                <strong>
+                  {formatCents(founding.founding_rate_premium_cents)}/mo premium
+                </strong>
+              </>
+            )}{' '}
+            per dog — held for as long as your membership stays active, whatever
+            we charge everyone else.
+          </p>
+        </div>
+      )}
+
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -127,8 +173,22 @@ export default function Membership() {
                 {t.tier}
               </h2>
               <div className="text-right">
-                <span className="text-2xl font-bold text-brand-900">{t.price}</span>
-                <span className="text-sm text-brand-500">/pet/mo</span>
+                {BETA_FREE ? (
+                  <>
+                    <span className="text-2xl font-bold text-emerald-700">$0</span>
+                    <span className="text-sm text-brand-500"> in beta</span>
+                    <div className="text-xs text-brand-500">
+                      {t.price}/pet/mo after
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-2xl font-bold text-brand-900">
+                      {t.price}
+                    </span>
+                    <span className="text-sm text-brand-500">/pet/mo</span>
+                  </>
+                )}
               </div>
             </div>
             <p className="mt-1 text-sm text-brand-600">{t.blurb}</p>
@@ -139,17 +199,23 @@ export default function Membership() {
                 </li>
               ))}
             </ul>
-            <button
-              onClick={() => subscribe(t.tier)}
-              disabled={busyTier !== null || currentSub?.tier === t.tier}
-              className="btn-primary mt-5 w-full"
-            >
-              {currentSub?.tier === t.tier
-                ? 'Current plan'
-                : busyTier === t.tier
-                  ? 'Redirecting…'
-                  : `Choose ${t.tier}`}
-            </button>
+            {BETA_FREE ? (
+              <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-800">
+                Included free in your beta
+              </div>
+            ) : (
+              <button
+                onClick={() => subscribe(t.tier)}
+                disabled={busyTier !== null || currentSub?.tier === t.tier}
+                className="btn-primary mt-5 w-full"
+              >
+                {currentSub?.tier === t.tier
+                  ? 'Current plan'
+                  : busyTier === t.tier
+                    ? 'Redirecting…'
+                    : `Choose ${t.tier}`}
+              </button>
+            )}
           </div>
         ))}
       </div>
