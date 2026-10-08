@@ -99,6 +99,56 @@ export async function joinWaitlist(entry: WaitlistEntry): Promise<void> {
 
   // 23505 = unique_violation: already on the list.
   if (error && error.code !== '23505') throw error
+
+  // Send the "you're on the list" confirmation. Fire-and-forget on purpose:
+  // the signup already succeeded, and a mail outage must not show the person
+  // an error for something that worked. The function is idempotent, so a
+  // duplicate submission never produces a second email.
+  supabase.functions
+    .invoke('beta-mail', {
+      body: { action: 'welcome', email: entry.email.trim().toLowerCase() },
+    })
+    .catch(() => {})
+}
+
+export interface InviteResult {
+  ok: boolean
+  sent: number
+  failed: number
+  remaining: number
+  first_error: string | null
+}
+
+/** Admin: mail the beta passcode to the oldest un-invited waitlist rows. */
+export async function sendInvites(limit = 25): Promise<InviteResult> {
+  const { data, error } = await supabase.functions.invoke<InviteResult>(
+    'beta-mail',
+    { body: { action: 'invite', limit } },
+  )
+  if (error) throw error
+  if (!data) throw new Error('Empty response from beta-mail')
+  return data
+}
+
+export interface MailStatus {
+  ok: boolean
+  configured: boolean
+  from: string
+  has_key: boolean
+  welcomed: number
+  invited: number
+  uninvited: number
+}
+
+/** Admin: is outbound beta mail actually able to send? */
+export async function mailStatus(): Promise<MailStatus> {
+  const { data, error } = await supabase.functions.invoke<MailStatus>(
+    'beta-mail',
+    { body: { action: 'status' } },
+  )
+  if (error) throw error
+  if (!data) throw new Error('Empty response from beta-mail')
+  return data
 }
 
 export function formatCents(cents: number): string {

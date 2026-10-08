@@ -4,7 +4,14 @@ import {
   adminAction,
   type AdminOverview,
 } from '../lib/api'
-import { FOUNDING_CAP, foundingStats, type FoundingStats } from '../lib/founding'
+import {
+  FOUNDING_CAP,
+  foundingStats,
+  mailStatus,
+  sendInvites,
+  type FoundingStats,
+  type MailStatus,
+} from '../lib/founding'
 
 type Board = 'vendors' | 'bookings' | 'sitters' | 'audience' | 'wearables' | 'waitlist'
 
@@ -18,6 +25,9 @@ export default function Admin() {
   const [board, setBoard] = useState<Board>('vendors')
   const [working, setWorking] = useState<string | null>(null)
   const [founding, setFounding] = useState<FoundingStats | null>(null)
+  const [mail, setMail] = useState<MailStatus | null>(null)
+  const [inviting, setInviting] = useState(false)
+  const [inviteMsg, setInviteMsg] = useState<string | null>(null)
 
   async function load() {
     try {
@@ -26,6 +36,9 @@ export default function Admin() {
       setState('ok')
       foundingStats()
         .then(setFounding)
+        .catch(() => {})
+      mailStatus()
+        .then(setMail)
         .catch(() => {})
     } catch (err) {
       const m = err instanceof Error ? err.message : ''
@@ -49,6 +62,26 @@ export default function Admin() {
       await load()
     } finally {
       setWorking(null)
+    }
+  }
+
+  async function invite(limit: number) {
+    setInviting(true)
+    setInviteMsg(null)
+    try {
+      const r = await sendInvites(limit)
+      setInviteMsg(
+        r.failed > 0
+          ? `Sent ${r.sent}, failed ${r.failed}. ${r.remaining} still un-invited. ${r.first_error ?? ''}`
+          : r.sent === 0
+            ? 'Nobody left to invite.'
+            : `Invited ${r.sent}. ${r.remaining} still un-invited.`,
+      )
+      mailStatus().then(setMail).catch(() => {})
+    } catch (err) {
+      setInviteMsg(err instanceof Error ? err.message : 'Could not send invites.')
+    } finally {
+      setInviting(false)
     }
   }
 
@@ -195,6 +228,61 @@ export default function Admin() {
               The list below is everyone who left an email without signing up
               yet, oldest first; invite from the top.
             </p>
+          </div>
+
+          {/* Outbound mail: say plainly whether sending works BEFORE a cohort
+              goes out, and show the provider's own words when it doesn't. */}
+          <div
+            className={`card ${
+              mail?.configured
+                ? 'border-emerald-200 bg-emerald-50/60'
+                : 'border-red-200 bg-red-50/60'
+            }`}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-brand-900">
+                  {mail
+                    ? mail.configured
+                      ? 'Beta mail is live'
+                      : 'Beta mail cannot send yet'
+                    : 'Checking beta mail…'}
+                </p>
+                {mail && (
+                  <p className="mt-1 text-xs text-brand-600">
+                    From <span className="font-mono">{mail.from}</span> ·{' '}
+                    {mail.welcomed} welcomed · {mail.invited} invited ·{' '}
+                    {mail.uninvited} waiting
+                  </p>
+                )}
+                {mail && !mail.configured && (
+                  <p className="mt-1 max-w-xl text-xs text-red-700">
+                    {mail.has_key
+                      ? 'Verify a sending domain at resend.com/domains, then set the BETA_MAIL_FROM secret to an address on it. Until then Resend only delivers to the account owner.'
+                      : 'RESEND_API_KEY is not set on this project.'}
+                  </p>
+                )}
+              </div>
+              <div className="flex shrink-0 flex-wrap gap-2">
+                <button
+                  onClick={() => invite(10)}
+                  disabled={inviting || !mail?.uninvited}
+                  className="btn-ghost text-sm disabled:opacity-40"
+                >
+                  {inviting ? 'Sending…' : 'Invite next 10'}
+                </button>
+                <button
+                  onClick={() => invite(100)}
+                  disabled={inviting || !mail?.uninvited}
+                  className="btn-primary text-sm disabled:opacity-40"
+                >
+                  {inviting ? 'Sending…' : 'Invite all waiting'}
+                </button>
+              </div>
+            </div>
+            {inviteMsg && (
+              <p className="mt-3 break-words text-xs text-brand-700">{inviteMsg}</p>
+            )}
           </div>
           {data.waitlist.list.length === 0 ? (
             <p className="text-sm text-brand-500">No signups yet.</p>
