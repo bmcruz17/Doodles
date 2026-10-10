@@ -88,6 +88,21 @@ supabase db push
 > RLS is on for every table — a user can only read/write their own data.
 > `vendors`/`services` are a public catalog.
 
+Fields that carry money, status, or trust (vendor verification/status,
+membership tier, Stripe ids, booking amounts, creator-deal payouts) are
+**service-role only**: client writes to them are rejected or quietly reverted
+by triggers (migrations 0017–0020). Clients can't select `vendors.owner_id` or
+`vendors.stripe_connect_id`; owners load their own listings with the
+`my_vendors()` RPC. If you add a column to `vendors`, add it to the column
+grant in 0017's pattern (and `VENDOR_CATALOG_COLUMNS`) or clients can't read it.
+
+### Database tests
+
+`npm test` applies every migration to a throwaway local Postgres and runs the
+RLS regression tests in `supabase/tests/` as the real `anon` / `authenticated`
+/ `service_role` roles. It needs Postgres server binaries on your machine
+(`brew install postgresql@16` or `apt-get install postgresql`).
+
 ## 5. Deploy the Edge Functions
 
 Set the server-side secrets, then deploy each function:
@@ -105,6 +120,10 @@ supabase functions deploy ai-chat
 supabase functions deploy create-checkout
 supabase functions deploy stripe-webhook   # config.toml sets verify_jwt = false
 ```
+
+The AI functions (`ai-chat`, `device-insights`, `parse-records`) are
+rate-limited per user through `consume_ai_quota()` (migration 0021) and fail
+closed if it's missing — apply migrations before deploying them.
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are
 injected into functions automatically by Supabase.
