@@ -139,6 +139,13 @@ export type Vendor = {
   updated_at: string
 }
 
+// What clients can read from the public catalog. owner_id and
+// stripe_connect_id have no client SELECT grant (migration 0017); an owner
+// gets their own full rows from the my_vendors() RPC.
+export const VENDOR_CATALOG_COLUMNS =
+  'id, name, category, description, location, verified, fulfillment, rating, status, member_discount_pct, zip, serves_anywhere, created_at, updated_at' as const
+export type CatalogVendor = Omit<Vendor, 'owner_id' | 'stripe_connect_id'>
+
 export type Service = {
   id: string
   vendor_id: string
@@ -688,6 +695,16 @@ export type Database = {
     }
     Views: Record<string, never>
     Functions: {
+      /** The signed-in owner's vendor listings (any status, all columns). */
+      my_vendors: {
+        Args: Record<string, never>
+        Returns: Vendor[]
+      }
+      /** Creator moves their own accepted deal to delivered. */
+      mark_deal_delivered: {
+        Args: { p_deal_id: string }
+        Returns: boolean
+      }
       /** Public founding-spot counter for the landing page (aggregates only). */
       founding_stats: {
         Args: Record<string, never>
