@@ -7,6 +7,7 @@
 //   { action: 'overview' }
 //   { action: 'set_vendor_status', id, value }      // pending|active|paused
 //   { action: 'set_booking_status', id, value }     // requested|confirmed|completed|cancelled
+//   { action: 'set_deal_status', id, value }        // creator deals; only ops may set 'paid'
 //   { action: 'set_sitter_status', id, value, verified? }
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 
@@ -60,6 +61,13 @@ Deno.serve(async (req) => {
     }
     if (action === 'set_booking_status') {
       await admin.from('bookings').update({ status: body.value }).eq('id', body.id)
+      return json({ ok: true })
+    }
+    if (action === 'set_deal_status') {
+      if (!['applied', 'accepted', 'delivered', 'paid', 'declined'].includes(body.value)) {
+        return json({ error: 'Invalid status' }, 400)
+      }
+      await admin.from('campaign_deals').update({ status: body.value }).eq('id', body.id)
       return json({ ok: true })
     }
     if (action === 'set_sitter_status') {

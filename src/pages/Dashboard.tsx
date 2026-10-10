@@ -5,7 +5,8 @@ import { useAuth } from '../hooks/useAuth'
 import { BRAND } from '../version'
 import PetAvatar from '../components/PetAvatar'
 import CategoryIcon from '../components/CategoryIcon'
-import type { Booking, Pet, Vaccination, Vendor } from '../lib/types'
+import { VENDOR_CATALOG_COLUMNS } from '../lib/types'
+import type { Booking, CatalogVendor, Pet, Vaccination } from '../lib/types'
 
 // --------------------------------------------------------------------------
 // Small helpers
@@ -130,7 +131,7 @@ export default function Dashboard() {
   const [pets, setPets] = useState<Pet[]>([])
   const [vaccinations, setVaccinations] = useState<Vaccination[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
-  const [vendors, setVendors] = useState<Vendor[]>([])
+  const [vendors, setVendors] = useState<CatalogVendor[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -144,7 +145,7 @@ export default function Dashboard() {
         .order('scheduled_for', { ascending: true }),
       supabase
         .from('vendors')
-        .select('*')
+        .select(VENDOR_CATALOG_COLUMNS)
         .eq('status', 'active')
         .order('rating', { ascending: false, nullsFirst: false }),
       user

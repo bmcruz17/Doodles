@@ -15,7 +15,8 @@ import type {
 
 // Self-serve provider listing. Local providers list FREE — they create a
 // vendor profile + services, which go live in the marketplace after review.
-// (RLS already scopes vendors/services to owner_id = auth.uid().)
+// (RLS scopes vendors/services to owner_id = auth.uid(); new listings are
+// forced to 'pending' server-side and only ops can activate/verify them.)
 
 const CATEGORIES: { key: VendorCategory; label: string }[] = [
   { key: 'grooming', label: 'Grooming' },
@@ -72,12 +73,23 @@ export default function Partner() {
 
   async function refresh() {
     if (!user) return
-    const { data } = await supabase
-      .from('vendors')
-      .select('*, services(*)')
-      .eq('owner_id', user.id)
-      .order('created_at', { ascending: false })
-    setExisting((data as (Vendor & { services: Service[] })[]) ?? [])
+    const { data: mine } = await supabase.rpc('my_vendors')
+    const vendors = mine ?? []
+    const { data: svcs } = vendors.length
+      ? await supabase
+          .from('services')
+          .select('*')
+          .in(
+            'vendor_id',
+            vendors.map((v) => v.id),
+          )
+      : { data: [] as Service[] }
+    setExisting(
+      vendors.map((v) => ({
+        ...v,
+        services: (svcs ?? []).filter((s) => s.vendor_id === v.id),
+      })),
+    )
     setLoading(false)
   }
 
@@ -104,11 +116,8 @@ export default function Partner() {
           category,
           location: location.trim() || null,
           description: description.trim() || null,
-          status: 'pending',
-          verified: false,
-          fulfillment: 'affiliate',
         })
-        .select()
+        .select('id')
         .single()
       if (vErr || !vendor) throw vErr ?? new Error('Could not create the listing')
 
@@ -201,7 +210,10 @@ export default function Partner() {
       )}
 
       {!loading && existing.length > 0 && (
-        <PromoteInFeed userId={user?.id ?? ''} vendors={existing} />
+        <PromoteInFeed
+          userId={user?.id ?? ''}
+          vendors={existing.filter((v) => v.status === 'active')}
+        />
       )}
 
       {!loading && existing.length > 0 && <CampaignsManager vendors={existing} />}
@@ -313,6 +325,21 @@ export default function Partner() {
   )
 }
 
+// Feed CTA links must be https (enforced by a DB constraint). Accept a bare
+// domain and assume https; reject anything else.
+function normalizeLink(raw: string): string | null {
+  const s = raw.trim()
+  if (!s) return null
+  const candidate = /^[a-z][a-z0-9+.-]*:/i.test(s) ? s : `https://${s}`
+  try {
+    const url = new URL(candidate)
+    if (url.protocol !== 'https:' || !url.hostname) throw new Error('not https')
+    return url.toString()
+  } catch {
+    throw new Error('Links must start with https://')
+  }
+}
+
 // --------------------------------------------------------------------------
 // Promote a product/post into the breed-targeted Pack feed.
 // --------------------------------------------------------------------------
@@ -340,6 +367,7 @@ function PromoteInFeed({
     setBusy(true)
     setMsg(null)
     try {
+      const link_url = normalizeLink(link)
       let image_url: string | null = null
       if (file) image_url = await uploadPostPhoto(userId, file)
       const vendor = vendors.find((v) => v.id === vendorId)
@@ -353,7 +381,7 @@ function PromoteInFeed({
         image_url,
         target_breed: breed.trim() || null,
         target_life_stage: stage || null,
-        link_url: link.trim() || null,
+        link_url,
         cta: cta.trim() || 'Learn more',
       })
       if (error) throw error
@@ -384,12 +412,20 @@ function PromoteInFeed({
             Pack feed.
           </p>
         </div>
-        <button onClick={() => setOpen((o) => !o)} className="btn-ghost text-sm">
-          {open ? 'Close' : 'Create'}
-        </button>
+        {vendors.length > 0 && (
+          <button onClick={() => setOpen((o) => !o)} className="btn-ghost text-sm">
+            {open ? 'Close' : 'Create'}
+          </button>
+        )}
       </div>
 
-      {open && (
+      {vendors.length === 0 && (
+        <p className="mt-3 text-sm text-brand-600">
+          You can promote a listing once it's approved and live in the marketplace.
+        </p>
+      )}
+
+      {open && vendors.length > 0 && (
         <form onSubmit={submit} className="mt-4 space-y-3">
           {vendors.length > 1 && (
             <div>
@@ -612,7 +648,7 @@ function CampaignsManager({ vendors }: { vendors: (Vendor & { services: Service[
                             </>
                           )}
                           {d.status === 'delivered' && (
-                            <button onClick={() => setDeal(d.id, 'paid')} className="rounded-md bg-emerald-600 px-2 py-1 text-xs text-white">Mark paid</button>
+                            <span className="text-xs text-brand-500">PackHub releases payout</span>
                           )}
                         </div>
                       </li>
