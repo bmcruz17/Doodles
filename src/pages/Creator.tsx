@@ -3,8 +3,6 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import type { Campaign, CampaignDeal, CreatorProfile } from '../lib/types'
 
-const COMMISSION = 0.18
-
 function money(n: number): string {
   return `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
 }
@@ -63,14 +61,12 @@ export default function Creator() {
 
   async function apply(c: Campaign) {
     if (!user || !profile) return
-    const payout = Number(c.payout_per_post)
+    // payout/commission are copied from the campaign server-side.
     await supabase.from('campaign_deals').insert({
       campaign_id: c.id,
       creator_id: user.id,
       creator_handle: profile.handle,
       status: 'applied',
-      payout,
-      commission: Math.round(payout * COMMISSION * 100) / 100,
     })
     load()
   }
@@ -203,10 +199,7 @@ export default function Creator() {
                   {d.status === 'accepted' && (
                     <button
                       onClick={async () => {
-                        await supabase
-                          .from('campaign_deals')
-                          .update({ status: 'delivered' })
-                          .eq('id', d.id)
+                        await supabase.rpc('mark_deal_delivered', { p_deal_id: d.id })
                         load()
                       }}
                       className="btn-ghost px-2 py-1 text-xs"
