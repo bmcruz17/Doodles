@@ -7,6 +7,7 @@
 // and respiratory drift, sleep/activity changes, hydration/appetite), and
 // writes the flagged items into device_alerts for the health dashboard.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
+import { consumeAiQuota, QUOTA_ERROR } from '../_shared/aiQuota.ts'
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')!
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -15,6 +16,8 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 const ANTHROPIC_MODEL = 'claude-opus-4-8'
 const ANTHROPIC_VERSION = '2023-06-01'
+
+const RATE_LIMIT = { max: 10, windowSeconds: 60 * 60 }
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -57,8 +60,8 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
   try {
     const authHeader = req.headers.get('Authorization') ?? ''
-    const { pet_id } = await req.json()
-    if (!pet_id) return json({ error: 'pet_id required' }, 400)
+    const { pet_id } = await req.json().catch(() => ({}))
+    if (typeof pet_id !== 'string' || !pet_id) return json({ error: 'pet_id required' }, 400)
 
     const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
@@ -77,6 +80,12 @@ Deno.serve(async (req) => {
       .limit(30)
     if (!daily || daily.length === 0) {
       return json({ summary: 'No wearable data yet.', alerts: [] })
+    }
+
+    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    const quota = await consumeAiQuota(admin, user.id, 'device-insights', RATE_LIMIT.max, RATE_LIMIT.windowSeconds)
+    if (quota !== 'ok') {
+      return json({ error: QUOTA_ERROR[quota].error }, QUOTA_ERROR[quota].status)
     }
 
     const profile = {
@@ -133,7 +142,6 @@ Deno.serve(async (req) => {
       : []
 
     // Replace prior unacknowledged AI alerts with the fresh set.
-    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     await admin.from('device_alerts').delete().eq('pet_id', pet_id).eq('acknowledged', false)
     if (alerts.length) {
       await admin.from('device_alerts').insert(

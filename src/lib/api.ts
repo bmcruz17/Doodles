@@ -1,10 +1,22 @@
 // Typed calls to Supabase Edge Functions. Each helper attaches the current
 // user's access token so the function can authenticate the caller.
+import { FunctionsHttpError } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+
+/** Mirrors MAX_MESSAGE_CHARS in the ai-chat function. */
+export const AI_MESSAGE_MAX_CHARS = 4000
 
 async function invoke<T>(fn: string, body: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.functions.invoke<T>(fn, { body })
-  if (error) throw error
+  if (error) {
+    // Surface the function's own `{ error }` message (rate limit, file too
+    // large, …) instead of the generic "non-2xx status code".
+    if (error instanceof FunctionsHttpError) {
+      const payload = await (error.context as Response).json().catch(() => null)
+      if (payload && typeof payload.error === 'string') throw new Error(payload.error)
+    }
+    throw error
+  }
   if (data == null) throw new Error(`Empty response from ${fn}`)
   return data
 }

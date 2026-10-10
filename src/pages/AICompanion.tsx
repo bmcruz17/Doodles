@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { aiChat } from '../lib/api'
+import { AI_MESSAGE_MAX_CHARS, aiChat } from '../lib/api'
 import type { ChatMessage, Pet } from '../lib/types'
 
 export default function AICompanion() {
@@ -126,6 +126,7 @@ export default function AICompanion() {
           className="input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          maxLength={AI_MESSAGE_MAX_CHARS}
           placeholder={`Ask about ${pet.name}…`}
           disabled={sending}
         />

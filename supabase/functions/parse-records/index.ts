@@ -13,6 +13,7 @@
 // source document. The Anthropic key never leaves the server.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 import { encodeBase64 } from 'https://deno.land/std@0.224.0/encoding/base64.ts'
+import { consumeAiQuota, QUOTA_ERROR } from '../_shared/aiQuota.ts'
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')!
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -21,6 +22,12 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 const ANTHROPIC_MODEL = 'claude-opus-4-8'
 const ANTHROPIC_VERSION = '2023-06-01'
+
+const RATE_LIMIT = { max: 20, windowSeconds: 60 * 60 }
+// Anthropic caps images at 5 MB; PDFs are sent base64 (+33%) inside a request
+// capped at 32 MB.
+const MAX_BYTES = { image: 5 * 1024 * 1024, pdf: 20 * 1024 * 1024 }
+const MAX_PATH_CHARS = 512
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -135,11 +142,16 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization') ?? ''
-    const { pet_id, path } = await req.json()
-    if (!pet_id || !path) return json({ error: 'pet_id and path are required' }, 400)
+    const { pet_id, path } = await req.json().catch(() => ({}))
+    if (typeof pet_id !== 'string' || !pet_id || typeof path !== 'string' || !path) {
+      return json({ error: 'pet_id and path are required' }, 400)
+    }
+    if (path.length > MAX_PATH_CHARS || path.includes('..')) {
+      return json({ error: 'Invalid path' }, 400)
+    }
 
     // Caller-scoped client: confirm the user owns this pet AND that the storage
-    // path lives under their own folder (paths are `${uid}/${petId}/...`).
+    // path lives under that pet's folder (paths are `${uid}/${petId}/...`).
     const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
     })
@@ -147,7 +159,7 @@ Deno.serve(async (req) => {
       data: { user },
     } = await userClient.auth.getUser()
     if (!user) return json({ error: 'Unauthorized' }, 401)
-    if (!String(path).startsWith(`${user.id}/`)) {
+    if (!path.startsWith(`${user.id}/${pet_id}/`)) {
       return json({ error: 'Forbidden' }, 403)
     }
 
@@ -161,6 +173,11 @@ Deno.serve(async (req) => {
     // Service role to read the private object and write the extracted rows.
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
+    const quota = await consumeAiQuota(admin, user.id, 'parse-records', RATE_LIMIT.max, RATE_LIMIT.windowSeconds)
+    if (quota !== 'ok') {
+      return json({ error: QUOTA_ERROR[quota].error }, QUOTA_ERROR[quota].status)
+    }
+
     const { data: blob, error: dlErr } = await admin.storage
       .from('pet-documents')
       .download(path)
@@ -171,6 +188,13 @@ Deno.serve(async (req) => {
       return json(
         { error: 'Unsupported file type. Upload a PDF, JPG, PNG, or WEBP.' },
         415,
+      )
+    }
+    if (blob.size > MAX_BYTES[mt.kind]) {
+      const mb = MAX_BYTES[mt.kind] / (1024 * 1024)
+      return json(
+        { error: `That file is too large to read. ${mt.kind === 'pdf' ? 'PDFs' : 'Images'} can be up to ${mb} MB.` },
+        413,
       )
     }
 
