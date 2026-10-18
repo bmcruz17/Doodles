@@ -406,6 +406,7 @@ function PostCard({
   }
 
   const isVendor = post.kind === 'vendor'
+  const safeLink = post.link_url && /^https:\/\//i.test(post.link_url) ? post.link_url : null
   const title = isVendor ? post.vendor_name || 'Featured' : post.author_name || 'A pack'
   const avatarUrl = isVendor ? null : post.pack_avatar
   const initial = (title || '?').charAt(0).toUpperCase()
@@ -492,8 +493,8 @@ function PostCard({
 
         {isVendor && (
           <a
-            href={post.link_url || '/marketplace'}
-            target={post.link_url ? '_blank' : undefined}
+            href={safeLink ?? '/marketplace'}
+            target={safeLink ? '_blank' : undefined}
             rel="noopener noreferrer"
             className="btn-primary mt-1 inline-flex text-sm"
           >

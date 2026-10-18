@@ -7,6 +7,10 @@
 // creates) a Stripe customer for the user and stamps stripe_customer_id onto
 // the users row so the webhook can reconcile.
 //
+// The stored customer id is only reused after Stripe confirms the customer
+// exists and its metadata.user_id is this user; otherwise a fresh customer is
+// created. users.stripe_customer_id is service-role-only (migration 0018).
+//
 // Set STRIPE_PRICE_BASIC / STRIPE_PRICE_PREMIUM to use pre-created Stripe
 // Prices; otherwise the function falls back to inline price_data so it runs
 // out of the box in test mode.
@@ -25,6 +29,17 @@ const PRICE_IDS: Record<string, string | undefined> = {
 // Fallback inline amounts (USD cents / month).
 const FALLBACK_AMOUNT: Record<string, number> = { basic: 1500, premium: 2900 }
 
+// Stripe redirects back here after checkout. Anything else (including the
+// Capacitor shell's capacitor://localhost) goes to production.
+const PRODUCTION_ORIGIN = 'https://packhub.atmxhq.com'
+const ALLOWED_RETURN_ORIGINS = new Set([
+  PRODUCTION_ORIGIN,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173',
+])
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
@@ -39,21 +54,48 @@ function json(body: unknown, status = 200) {
   })
 }
 
-// Minimal application/x-www-form-urlencoded helper for the Stripe REST API.
-async function stripe(path: string, params: Record<string, string>) {
+function returnOrigin(req: Request): string {
+  const origin = req.headers.get('origin') ?? ''
+  return ALLOWED_RETURN_ORIGINS.has(origin) ? origin : PRODUCTION_ORIGIN
+}
+
+// Minimal helper for the Stripe REST API (form-encoded bodies).
+async function stripe(
+  path: string,
+  params?: Record<string, string>,
+  opts: { method?: 'GET' | 'POST'; idempotencyKey?: string } = {},
+) {
+  const method = opts.method ?? 'POST'
+  const headers: Record<string, string> = { Authorization: `Bearer ${STRIPE_SECRET_KEY}` }
+  if (method === 'POST') headers['Content-Type'] = 'application/x-www-form-urlencoded'
+  if (opts.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey
   const res = await fetch(`https://api.stripe.com/v1/${path}`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams(params),
+    method,
+    headers,
+    body: method === 'POST' ? new URLSearchParams(params ?? {}) : undefined,
   })
   const data = await res.json()
+  return { ok: res.ok, status: res.status, data }
+}
+
+class CheckoutError extends Error {}
+
+async function stripeOrThrow(...args: Parameters<typeof stripe>) {
+  const res = await stripe(...args)
   if (!res.ok) {
-    throw new Error(data?.error?.message ?? `Stripe error on ${path}`)
+    console.error('Stripe error', args[0], res.status, res.data?.error)
+    throw new CheckoutError('stripe')
   }
-  return data
+  return res.data
+}
+
+// The stored id is reusable only if it's a live customer that we created for
+// this exact user.
+async function customerBelongsTo(customerId: string, userId: string): Promise<boolean> {
+  if (!/^cus_[A-Za-z0-9]+$/.test(customerId)) return false
+  const res = await stripe(`customers/${encodeURIComponent(customerId)}`, undefined, { method: 'GET' })
+  if (!res.ok || res.data?.deleted) return false
+  return res.data?.metadata?.user_id === userId
 }
 
 Deno.serve(async (req) => {
@@ -64,10 +106,10 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization') ?? ''
-    const origin = req.headers.get('origin') ?? SUPABASE_URL
-    const { pet_id, tier } = await req.json()
+    const origin = returnOrigin(req)
+    const { pet_id, tier } = await req.json().catch(() => ({}))
 
-    if (!pet_id || !['basic', 'premium'].includes(tier)) {
+    if (typeof pet_id !== 'string' || !pet_id || !['basic', 'premium'].includes(tier)) {
       return json({ error: 'pet_id and a valid tier are required' }, 400)
     }
 
@@ -90,28 +132,34 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     const { data: profile } = await admin
       .from('users')
-      .select('stripe_customer_id, email')
+      .select('stripe_customer_id')
       .eq('id', user.id)
       .single()
 
-    // Reuse or create the Stripe customer.
-    let customerId = profile?.stripe_customer_id ?? undefined
+    let customerId: string | null = profile?.stripe_customer_id ?? null
+    if (customerId && !(await customerBelongsTo(customerId, user.id))) {
+      console.warn('Discarding stripe_customer_id that does not belong to user', user.id)
+      customerId = null
+    }
     if (!customerId) {
-      const customer = await stripe('customers', {
-        email: profile?.email ?? user.email ?? '',
-        'metadata[user_id]': user.id,
-      })
-      customerId = customer.id
-      await admin
+      const email = user.email ?? ''
+      const customer = await stripeOrThrow(
+        'customers',
+        { email, 'metadata[user_id]': user.id },
+        { idempotencyKey: `packhub-customer-${user.id}-${email}` },
+      )
+      customerId = customer.id as string
+      const { error: saveErr } = await admin
         .from('users')
         .update({ stripe_customer_id: customerId })
         .eq('id', user.id)
+      if (saveErr) console.error('Could not save stripe_customer_id', saveErr)
     }
 
     // Build the line item: pre-created Price, else inline price_data.
     const params: Record<string, string> = {
       mode: 'subscription',
-      customer: customerId!,
+      customer: customerId,
       success_url: `${origin}/membership?status=success`,
       cancel_url: `${origin}/membership?status=cancelled`,
       'metadata[user_id]': user.id,
@@ -136,13 +184,10 @@ Deno.serve(async (req) => {
         `PackHub ${tier} membership — ${pet.name}`
     }
 
-    const session = await stripe('checkout/sessions', params)
+    const session = await stripeOrThrow('checkout/sessions', params)
     return json({ url: session.url })
   } catch (err) {
-    console.error(err)
-    return json(
-      { error: err instanceof Error ? err.message : 'Internal error' },
-      500,
-    )
+    if (!(err instanceof CheckoutError)) console.error(err)
+    return json({ error: 'Could not start checkout. Please try again.' }, 500)
   }
 })

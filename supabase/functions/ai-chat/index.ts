@@ -8,6 +8,7 @@
 // (server-side — the key never reaches the client), appends the exchange to
 // ai_conversations.messages, and returns the reply.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
+import { consumeAiQuota, QUOTA_ERROR } from '../_shared/aiQuota.ts'
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')!
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -16,6 +17,11 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 const ANTHROPIC_MODEL = 'claude-opus-4-8'
 const ANTHROPIC_VERSION = '2023-06-01'
+
+const MAX_MESSAGE_CHARS = 4000
+const RATE_LIMIT = { max: 30, windowSeconds: 10 * 60 }
+// ai_conversations.messages is one JSONB value per pet; keep it bounded.
+const MAX_STORED_MESSAGES = 200
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -80,9 +86,16 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization') ?? ''
-    const { pet_id, message } = await req.json()
-    if (!pet_id || !message) {
+    const { pet_id, message: rawMessage } = await req.json().catch(() => ({}))
+    const message = typeof rawMessage === 'string' ? rawMessage.trim() : ''
+    if (typeof pet_id !== 'string' || !pet_id || !message) {
       return json({ error: 'pet_id and message are required' }, 400)
+    }
+    if (message.length > MAX_MESSAGE_CHARS) {
+      return json(
+        { error: `Messages are limited to ${MAX_MESSAGE_CHARS.toLocaleString('en-US')} characters.` },
+        413,
+      )
     }
 
     // Caller-scoped client (RLS enforced) to verify the user owns this pet.
@@ -100,6 +113,12 @@ Deno.serve(async (req) => {
       .eq('id', pet_id)
       .single()
     if (petErr || !pet) return json({ error: 'Pet not found' }, 404)
+
+    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    const quota = await consumeAiQuota(admin, user.id, 'ai-chat', RATE_LIMIT.max, RATE_LIMIT.windowSeconds)
+    if (quota !== 'ok') {
+      return json({ error: QUOTA_ERROR[quota].error }, QUOTA_ERROR[quota].status)
+    }
 
     const { data: records } = await userClient
       .from('health_records')
@@ -167,8 +186,6 @@ Deno.serve(async (req) => {
         : ''
 
     // Service-role client for reading/writing the conversation history.
-    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-
     const { data: conv } = await admin
       .from('ai_conversations')
       .select('id, messages')
@@ -212,9 +229,9 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString()
     const updatedMessages: ChatMessage[] = [
       ...history,
-      { role: 'user', content: message, ts: now },
-      { role: 'assistant', content: reply, ts: now },
-    ]
+      { role: 'user' as const, content: message, ts: now },
+      { role: 'assistant' as const, content: reply, ts: now },
+    ].slice(-MAX_STORED_MESSAGES)
 
     if (conv) {
       await admin

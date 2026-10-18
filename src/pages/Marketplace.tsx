@@ -3,10 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import CategoryIcon from '../components/CategoryIcon'
-import type { Pet, Service, Vendor, VendorCategory } from '../lib/types'
-
-// Our platform commission on each transaction (the distributor margin).
-const COMMISSION_RATE = 0.18
+import { VENDOR_CATALOG_COLUMNS } from '../lib/types'
+import type { CatalogVendor, Pet, Service, VendorCategory } from '../lib/types'
 
 const CATEGORIES: { key: VendorCategory | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -21,7 +19,7 @@ const CATEGORIES: { key: VendorCategory | 'all'; label: string }[] = [
   { key: 'training', label: 'Training' },
 ]
 
-type VendorWithServices = Vendor & { services: Service[] }
+type VendorWithServices = CatalogVendor & { services: Service[] }
 
 export default function Marketplace() {
   const { user } = useAuth()
@@ -57,7 +55,7 @@ export default function Marketplace() {
     Promise.all([
       supabase
         .from('vendors')
-        .select('*, services(*)')
+        .select(`${VENDOR_CATALOG_COLUMNS}, services(*)`)
         .eq('status', 'active')
         .order('rating', { ascending: false }),
       supabase.from('pets').select('*').order('created_at'),
@@ -318,7 +316,7 @@ function BookingModal({
 }: {
   userId: string
   pets: Pet[]
-  vendor: Vendor
+  vendor: CatalogVendor
   service: Service
   onClose: () => void
 }) {
@@ -329,10 +327,10 @@ function BookingModal({
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
 
+  // Display quote only — the database prices the booking from the service row.
   const listPrice = Number(service.price)
   const discountPct = vendor.member_discount_pct ?? 0
   const amount = Math.round(listPrice * (1 - discountPct / 100) * 100) / 100
-  const commission = Math.round(amount * COMMISSION_RATE * 100) / 100
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -346,9 +344,6 @@ function BookingModal({
         vendor_id: vendor.id,
         scheduled_for: scheduledFor ? new Date(scheduledFor).toISOString() : null,
         status: 'requested',
-        amount,
-        commission,
-        currency: service.currency,
         notes: notes || null,
       })
       if (insertError) throw insertError
