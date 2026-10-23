@@ -15,7 +15,7 @@
 // the list.
 //
 // Deliverability: FROM must be on a Resend-verified domain. Set BETA_MAIL_FROM
-// once hidonutman.com is verified; until then it falls back to Resend's
+// once packhub.atmxhq.com is verified; until then it falls back to Resend's
 // onboarding sender, which only delivers to the Resend account owner.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 
@@ -24,7 +24,7 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const FROM = Deno.env.get('BETA_MAIL_FROM') ?? 'PackHub <onboarding@resend.dev>'
-const SITE = Deno.env.get('BETA_SITE_URL') ?? 'https://hidonutman.com'
+const SITE = Deno.env.get('BETA_SITE_URL') ?? 'https://packhub.atmxhq.com'
 const PASSCODE = Deno.env.get('BETA_PASSCODE') ?? 'goodboy2026'
 const REPLY_TO = Deno.env.get('BETA_MAIL_REPLY_TO') ?? ''
 
